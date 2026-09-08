@@ -1,0 +1,130 @@
+% Copyright 2026 MarcosHCK
+%
+\documentclass{article}[12pt,a4paper]
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{bookmark}
+\usepackage{hyperref}
+\usepackage{cleveref} % must load after hyperref
+\usepackage{fontawesome5}
+\usepackage{graphicx}
+\usepackage{inputenc}[utf8]
+\usepackage{indentfirst}
+\usepackage{minted}
+\usepackage{polyglossia}[spanish,english]
+\usepackage{biblatex}[style=apa] % must load after polyglossia
+\usepackage{csquotes} % must load after biblatex
+\usepackage{setspace}
+\usepackage{svg}
+\usepackage{xcolor}[dvipsnames]
+
+\setmainlanguage{spanish}
+\setotherlanguage{english}
+
+\setstretch{1.5}
+
+\newcommand{\bashps}{\textasciitilde\#\,}
+
+\definecolor{Aquamarine}{rgb}{0.498, 1, 0.83}
+\definecolor{DarkAquamarine}{rgb}{0.18, 0.55, 0.34}
+\definecolor{YellowOrange}{rgb}{1, 0.7, 0}
+\newcommand\myshade{85}
+\colorlet{mycitecolor}{YellowOrange}
+\colorlet{mylinkcolor}{violet}
+\colorlet{myurlcolor}{DarkAquamarine}
+
+\hypersetup {
+    colorlinks = true,
+    citecolor  = mycitecolor!\myshade!black,
+    linkcolor  = mylinkcolor!\myshade!black,
+    urlcolor   = myurlcolor!\myshade!black,
+  }
+
+\begin{document}
+
+\begin{titlepage}
+
+  \centering
+  {\huge\bfseries Reporte (semanas 1 y 2)\par}
+	{\Large Autor: \itshape Marcos Antonio Pérez Lorenzo\par}
+\end{titlepage}
+
+\pagebreak
+\section{Arquitecturas generales}
+
+\subsection{C++}
+\label{sec:genarc:cplusplus}
+
+Todos los programas escritos en \textbf{C++} siguen las siguientes características
+
+\begin{itemize}
+  \item Lenguaje: \textbf{C++}.
+  \item Dependencias: librería estándar.
+  \item Flujo: obtención de datos, cálculos, salida del programa.
+\end{itemize}
+
+\subsection{Python}
+\label{sec:genarc:python}
+
+Todos los programas escritos en \textbf{Python} siguen las siguientes características
+
+\begin{itemize}
+  \item Lenguaje: \textbf{Python}.
+  \item Dependencias: librería estándar.
+  \item Flujo: obtención de datos, cálculos, salida del programa.
+\end{itemize}
+
+\section{Instrucciones de uso}
+
+\subsection{C++}
+\label{src:genericinstrc:cplusplus}
+
+Todos los programas escritos en \textbf{C++} se pueden ejecutar mediante un script de \textbf{Python} intermediario para su fácil uso, por lo tanto se ejecutan de la misma forma usado para programas escritos en \textbf{Python} (descritos en \ref{src:genericinstrc:python})
+
+\subsection{Python}
+\label{src:genericinstrc:python}
+
+Todos los programas escritos en \textbf{Python} se pueden ejecutar desde una terminal con acceso al interprete. Por ejemplo, para ejecutar el programa "clase567": en una terminal cuyo directorio de trabajo es el directorio raíz del repositorio, ejecutar "\mintinline{bash}{python3 clase567}".
+
+\section{Programas}
+
+\subsection{Programa 1}
+
+\subsubsection{Objetivos}
+
+Varios ejemplos de programas hechos en Python, finalmente componiendo el código para calcular el volumen de un prisma, obteniendo las longitudes de las lados del usuario a través de la función \mintinline{python3}{input (...)}.
+
+\subsubsection{Tecnicismos}
+
+Arquitectura plana, basada en \ref{sec:genarc:python}.
+
+\subsubsection{Código relevante}
+
+El núcleo del código incluye la obtención y tratamiento de los datos, en dos líneas:
+
+\begin{minted}{python3}
+  values = ( float (input (f'Lado {n} (m): ')) for n in [ 'A', 'B', 'C' ] )
+  volume = reduce (mul, values)
+\end{minted}
+
+\subsubsection{Ejecución}
+
+Ver sección \ref{src:genericinstrc:python}.
+
+\subsubsection{Resultados esperados}
+
+\bashps\mintinline{bash}{python clase1}
+
+\begin{itemize}
+  \item[] Lado A (m): 1
+  \item[] Lado B (m): 1
+  \item[] Lado C (m): 1
+  \item[] El volumen es 1.0m\textasciicircum3
+\end{itemize}
+
+\subsubsection{Liga de \textbf{Github}}
+
+\href{https://github.com/MarcosHCK/master-programming/tree/master/clase1}{Aquí \faGithubSquare}
+
+\end{document}
