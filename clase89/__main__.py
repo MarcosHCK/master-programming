@@ -158,7 +158,7 @@ def linear_operator (a: list[list[float]], b: list[list[float]], op: Callable[[f
 
   return list (do_rows (a,  b))
 
-with Path ('clase78.txt').open ('rt') as stream:
+with (Path (__file__.removesuffix ('/__main__.py')) / 'example.txt').open ('rt') as stream:
 
   g = ( l.split ('#') [0].strip () for l in stream )
   a, o, b = load_operation (g)

@@ -12,7 +12,7 @@ def read_row (line: str, excepts: int = 0):
 
   return pieces
 
-with Path ('clase4.txt').open ('rt') as stream:
+with (Path (__file__.removesuffix ('/__main__.py')) / 'example.txt').open ('rt') as stream:
 
   a, b, c = read_row (stream.readline (), 3)
   d, e, f = read_row (stream.readline (), 3)

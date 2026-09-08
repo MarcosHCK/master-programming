@@ -73,21 +73,7 @@ add_project_link_arguments (cpp.get_supported_link_arguments (warning_c_link_arg
 
 argparse_dep = dependency ('argparse', required: true)
 
-__utils_lib = static_library ('utility',
-  # TODO: device a portable way to link c++23 standard stacktrace
-  # implementation
-  dependencies: [ cc.find_library ('libstdc++exp') ],
-  include_directories: include_directories ('.'),
-  sources: [ 'exception.cc', 'exception.h' ])
-
-__utils_dep = declare_dependency (
-  include_directories: include_directories ('.'),
-  link_with: __utils_lib)
-
-executable ('clase56',
-  dependencies: [ argparse_dep, __utils_dep ],
-  include_directories: include_directories ('.'),
-  sources: 'clase56.cc')
+subdir ('clase567')
 
 summary ({
     'C compiler': cc.get_id (),
