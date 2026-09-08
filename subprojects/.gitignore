@@ -1,0 +1,7 @@
+# Copyright 2026 MarcosHCK
+#
+
+/.wraplock
+/packagecache/**/*
+
+/argparse*/**/*
