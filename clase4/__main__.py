@@ -2,12 +2,12 @@
 #
 from pathlib import Path
 
-def read_row (line: str, excepts: int = 0):
+def read_row (line: str, n: int = 0):
 
   pieces = filter (lambda p: len (p) > 0, line.split (' '))
   pieces = tuple ( int (p) for p in pieces )
 
-  if excepts > 0 and len (pieces) != excepts:
+  if n > 0 and len (pieces) != n:
     raise Exception ('invalid matrix row length')
 
   return pieces

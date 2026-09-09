@@ -89,6 +89,8 @@ Todos los programas escritos en \textbf{Python} se pueden ejecutar desde una ter
 
 \section{Programas}
 
+Todos los programas se encuentran alojados en este \href{https://github.com/MarcosHCK/master-programming/}{repositorio \faGithubSquare}
+
 \subsection{Programa 1}
 
 \subsubsection{Objetivos}
@@ -97,7 +99,7 @@ Varios ejemplos de programas hechos en Python, finalmente componiendo el código
 
 \subsubsection{Tecnicismos}
 
-Arquitectura plana, basada en \ref{sec:genarc:python}.
+Arquitectura basada en \ref{sec:genarc:python}.
 
 \subsubsection{Código relevante}
 
@@ -114,7 +116,7 @@ Ver sección \ref{src:genericinstrc:python}.
 
 \subsubsection{Resultados esperados}
 
-\bashps\mintinline{bash}{python clase1}
+\bashps\mintinline{bash}{python3 clase1}
 
 \begin{itemize}
   \item[] Lado A (m): 1
@@ -126,5 +128,316 @@ Ver sección \ref{src:genericinstrc:python}.
 \subsubsection{Liga de \textbf{Github}}
 
 \href{https://github.com/MarcosHCK/master-programming/tree/master/clase1}{Aquí \faGithubSquare}
+
+\subsection{Programa 2}
+
+\subsubsection{Objetivos}
+
+Crear un programa para simular un semi-sumador de 1 (un) bit
+
+\subsubsection{Tecnicismos}
+
+Arquitectura basada en \ref{sec:genarc:python}.
+
+\subsubsection{Código relevante}
+
+El núcleo del código incluye el tratamiento de los datos:
+
+\begin{minted}{python3}
+  print (f'{a} + {b} = {a ^ b} (carry {a and b})')
+\end{minted}
+
+\subsubsection{Ejecución}
+
+Ver sección \ref{src:genericinstrc:python}.
+
+\subsubsection{Resultados esperados}
+
+\bashps\mintinline{bash}{python3 clase2}
+
+\begin{itemize}
+  \item[] Primer bit: 1
+  \item[] Segundo bit: 0
+  \item[] 1 + 0 = 1 (carry 0)
+\end{itemize}
+
+\subsubsection{Liga de \textbf{Github}}
+
+\href{https://github.com/MarcosHCK/master-programming/tree/master/clase2}{Aquí \faGithubSquare}
+
+\subsection{Programa 3}
+
+\subsubsection{Objetivos}
+
+Crear un programa para simular las puertas lógicas estudiadas en clase
+
+\subsubsection{Tecnicismos}
+
+Arquitectura basada en \ref{sec:genarc:python}.
+
+\subsubsection{Código relevante}
+
+El núcleo del código incluye el tratamiento de los datos:
+
+\begin{minted}{python3}
+  operations = [
+    (lambda a, b: (a and b, a ^ b), 'suma', '(c, r)'),
+    (lambda a: int (not a), 'not', 'r'),
+    (lambda a, b: a and b, 'and', 'r'),
+    (lambda a, b: a or b, 'or', 'r'),
+    (lambda a, b: a ^ b, 'xor', 'r'),
+    (lambda a, b: int (not (a and b)), 'nand', 'r'),
+    (lambda a, b: int (not (a or b)), 'nor', 'r'),
+    (lambda a, b: int (not (a ^ b)), 'xnor', 'r'), ]
+\end{minted}
+
+\subsubsection{Ejecución}
+
+Ver sección \ref{src:genericinstrc:python}.
+
+\subsubsection{Resultados esperados}
+
+\bashps\mintinline{bash}{python3 clase3}
+
+\begin{itemize}
+  \item[] suma de (a, b) as (c, r)
+  \item[] --------------------------
+  \item[] suma de (0, 0) es (0, 0)
+  \item[] ...
+          not de (a, b) as r
+  \item[] --------------------------
+  \item[] not de (0,) es 1
+  \item[] ...
+          and de (a, b) as r
+  \item[] --------------------------
+  \item[] and de (0, 0) es 0
+  \item[] ...
+\end{itemize}
+
+\subsubsection{Liga de \textbf{Github}}
+
+\href{https://github.com/MarcosHCK/master-programming/tree/master/clase3}{Aquí \faGithubSquare}
+
+\subsection{Programa 4}
+
+\subsubsection{Objetivos}
+
+Crear un programa que calcule el resultado de un sistema de ecuaciones lineales de primer grado con dos variables, utilizando cálculo matricial, específicamente la regla de Cramer.
+
+\subsubsection{Tecnicismos}
+
+Arquitectura basada en \ref{sec:genarc:python}. Utiliza la regla de Cramer para calcular los valores de ambas incógnitas.
+
+\subsubsection{Código relevante}
+
+El núcleo del código incluye el captura de datos (de un archivo externo):
+
+\begin{minted}{python3}
+  def read_row (line: str, n: int = 0):
+
+    pieces = filter (lambda p: len (p) > 0, line.split (' '))
+    pieces = tuple ( int (p) for p in pieces )
+
+    if n > 0 and len (pieces) != n:
+      raise Exception ('invalid matrix row length')
+
+    return pieces
+
+  with (Path (__file__.removesuffix ('/__main__.py')) / 'example.txt').open ('rt') as stream:
+
+    a, b, c = read_row (stream.readline (), 3)
+    d, e, f = read_row (stream.readline (), 3)
+\end{minted}
+
+Y el tratamiento de datos:
+
+\begin{minted}{python3}
+  if 0 == (di := e * a - d * b):
+    raise Exception ('can not solve a singular matrix')
+
+  y = (f * a - d * c) / di
+  x = c / a - (b / a * y)
+\end{minted}
+
+\subsubsection{Ejecución}
+
+Ver sección \ref{src:genericinstrc:python}.
+
+\subsubsection{Resultados esperados}
+
+\bashps\mintinline{bash}{python3 clase4}
+
+\begin{itemize}
+  \item[] Primer bit: 1
+  \item[] Segundo bit: 0
+  \item[] 1 + 0 = 1 (carry 0)
+\end{itemize}
+
+\subsubsection{Liga de \textbf{Github}}
+
+\href{https://github.com/MarcosHCK/master-programming/tree/master/clase4}{Aquí \faGithubSquare}
+
+\subsection{Programa 5}
+
+\subsubsection{Objetivos}
+
+Es un programa que condensada, varias clases en uno, cuyos objetivos son:
+
+\begin{enumerate}
+  \item Crear un programa que calcule el resultado de un sistema de ecuaciones lineales de primer grado con tres variables.
+  \item Crear un programa que calcule el resultado de un sistema de ecuaciones lineales de primer grado con cuatro variables.
+  \item Crear un programa que calcule el resultado de un sistema de ecuaciones lineales de primer grado con \(n\) variables.
+\end{enumerate}
+
+El programa logrado calcula la solución para sistema de ecuaciones lineales de primer grado con \(n\) variables, de la cual los dos primeros objetivos son un caso específico.
+
+\subsubsection{Tecnicismos}
+
+Arquitectura basada en \ref{sec:genarc:cplusplus}. Utiliza una forma de descomposición \textbf{LU}, llamada descomposición \textbf{LU} con pivote, donde se calculan dos matrices \(L\) y \(U\) triangulares inferior y superior, respectivamente, que satisfacen le ecuación \(PA=LU\), donde \(P\) es una matriz de permutación, y \(A\) es la matriz a resolver. Finalmente, el vector solución se calcula de forma \(Ly=Pb\) y \(Uy=x\), donde \(b\) es el vector de términos independientes, \(y\) es un vector intermedio, y \(x\) es el vector resultado; ambas ecuaciones son trivialmente solubles, dado que ambas matrices \(L\) y \(U\) son triangulares.
+
+\subsubsection{Código relevante}
+
+El núcleo del código incluye la captura de datos:
+
+\begin{minted}{c++}
+  static inline std::pair<std::vector<double>, std::vector<double>> load_max (std::istream& stream)
+  {
+
+    std::vector<double> row, rows;
+    std::vector<double> b;
+    decltype (row)::size_type last = 0;
+
+    for (std::string line (1, 0); std::getline (stream, line);)
+      {
+
+        if (line.starts_with ("#") || line.size () == 0)
+          continue;
+
+        auto [ line_, b_i ] = split_b (line);
+
+        b.push_back (b_i);
+
+        std::sregex_token_iterator end;
+        std::sregex_token_iterator iter (line_.begin (), line_.end (), space_rgx, -1);
+
+        for (; iter != end; ++iter)
+          {
+
+            auto str = iter->str ();
+
+            ltrim (line_);
+            rtrim (line_);
+
+            if (str.length () > 0)
+              row.push_back (std::stod (str));
+          }
+
+        if (last == 0)
+          rows.reserve (last = row.size ());
+
+        else if (last != row.size ())
+          throw wrap_stacktrace<std::runtime_error> ("incompatible amount of columns in a row");
+
+        rows.insert (rows.end (), row.begin (), row.end ());
+        row.clear ();
+      }
+
+    if (last == 0)
+      throw wrap_stacktrace<std::runtime_error> ("unexpected empty matrix");
+
+    if (last != rows.size () / last)
+      throw wrap_stacktrace<std::runtime_error> ("unexpected rectangular matrix");
+
+  return { rows, b };
+  }
+\end{minted}
+
+Y el tratamiento de datos:
+
+\begin{minted}{c++}
+  static inline std::vector<double> solve (std::vector<double> A, std::vector<double>& b)
+  {
+
+    std::vector<double> p (b.size ());
+    std::vector<double> y (b.size ());
+    std::vector<double> x (b.size ());
+
+    for (decltype (b.size ()) n = b.size (), i = 0; i < n; i++)
+      p [i] = i;
+
+    for (decltype (b.size ()) n = b.size (), k = 0; k < n; ++k)
+      {
+
+        auto maxRow = (decltype (b.size ())) k;
+        auto maxVal = std::abs (A [k + n * p [k]]);
+
+        for (decltype (n) i = k + 1; i < n; ++i)
+
+          if (auto next = std::abs (A [k + n * p [i]]); maxVal < next)
+            {
+              maxVal = next;
+              maxRow = i;
+            }
+
+        if (maxVal < 1e-15)
+          {
+            auto m = "Matrix is singular (maxVal " + std::to_string (maxVal) + ")";
+            throw wrap_stacktrace<std::runtime_error> (m);
+          }
+
+        std::swap (p [k], p [maxRow]);
+
+        for (decltype (n) i = k + 1; i < n; ++i)
+          {
+
+            auto factor = A [k + n * p [i]] / A [k + n * p[k]];
+
+            A [k + n * p [i]] = factor;
+            
+            for (decltype (n) j = k + 1; j < n; ++j)
+              A [j + n * p [i]] -= factor * A [j + n * p [k]];
+          }
+      }
+
+    for (decltype (b.size ()) n = b.size (), i = 0; i < n; ++i)
+      {
+
+        double sum = 0.;
+
+        for (size_t j = 0; j < i; j++)
+          sum += A [j + n * p[i]] * y [j];
+
+        y [i] = b [p[i]] - sum;
+      }
+
+    for (decltype (b.size ()) n = b.size (), i = n - 1; i >= 0; --i)
+      {
+
+        double sum = 0.;
+
+        for (decltype (n) j = i + 1; j < n; j++)
+          sum += A [j + n * p[i]] * x [j];
+
+        x [i] = (y [i] - sum) / A [i + n * p[i]];
+      }
+  return x;
+  }
+\end{minted}
+
+\subsubsection{Ejecución}
+
+Ver sección \ref{src:genericinstrc:cplusplus}.
+
+\subsubsection{Resultados esperados}
+
+\bashps\mintinline{bash}{python3 clase567}
+
+\begin{itemize}
+  \item[] x = [ 0.0382182, 0.000944757, -0.0709671 ], took 4us
+\end{itemize}
+
+\subsubsection{Liga de \textbf{Github}}
+
+\href{https://github.com/MarcosHCK/master-programming/tree/master/clase567}{Aquí \faGithubSquare}
 
 \end{document}
