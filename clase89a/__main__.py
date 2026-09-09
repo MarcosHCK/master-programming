@@ -1,7 +1,24 @@
 # Copyright 2026 MarcosHCK
 #
 from pathlib import Path
-from typing import Callable, Iterable, Iterator, Protocol, TypeVar
+from typing import Callable, Iterable, Iterator, ParamSpec, Protocol, TypeVar
+
+P = ParamSpec ('P')
+R = TypeVar ('R')
+
+def stime (func: Callable[P, R]) -> Callable[P, R]:
+
+  import time
+
+  def wrapper (*args, **kwargs):
+
+    start = time.perf_counter ()
+    result = func (*args, **kwargs) # type: ignore
+
+    print (f'{func.__name__}: {(time.perf_counter () - start) * 1000000:.4f}ns')
+    return result
+
+  return wrapper # type: ignore
 
 def load_matrix (lines: Iterable[str]):
 
@@ -138,6 +155,7 @@ def print_operation (a: list[list[float]], b: list[list[float]], r: list[list[fl
     file.write (lines [2])
     file.write ('\n')
 
+@stime
 def linear_operator (a: list[list[float]], b: list[list[float]], op: Callable[[float, float], float]):
 
   if len (a) != len (b):
@@ -158,6 +176,36 @@ def linear_operator (a: list[list[float]], b: list[list[float]], op: Callable[[f
 
   return list (do_rows (a,  b))
 
+@stime
+def matrix_product (a: list[list[float]], b: list[list[float]]):
+
+  if len (a [0]) != len (b):
+    raise Exception(f'incompatible matrix sizes ({len (a [0])} columns against {len (b)} rows)')
+
+  def flip (m: list[list[float]]):
+
+    for i in range (len (m [0])):
+      yield list (( r [i] for r in b ))
+
+  t = list (flip (b))
+
+  def mul_abs (r: list[float], t: list[float]):
+
+    for a, b in zip (r, t):
+      yield a * b
+
+  def mul_cols (r: list[float], t: list[list[float]]):
+
+    for col in t:
+      yield sum (mul_abs (r, col))
+
+  def mul_rows (a: list[list[float]], t: list[list[float]]):
+
+    for row in a:
+      yield list (mul_cols (row, t))
+
+  return list (mul_rows (a, t))
+
 with (Path (__file__.removesuffix ('/__main__.py')) / 'example.txt').open ('rt') as stream:
 
   g = ( l.split ('#') [0].strip () for l in stream )
@@ -170,3 +218,6 @@ with (Path (__file__.removesuffix ('/__main__.py')) / 'example.txt').open ('rt')
 
     case '-':
       print_operation (a, b, linear_operator (a, b, lambda a, b: a - b), o)
+
+    case '*':
+      print_operation (a, b, matrix_product (a, b), o)
