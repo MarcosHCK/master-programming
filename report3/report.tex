@@ -58,4 +58,156 @@
 
 Todos los programas se encuentran alojados en este \href{https://github.com/MarcosHCK/master-programming/}{repositorio \faGithubSquare}
 
+\subsection{Programa 1}
+
+\subsubsection{Objetivos}
+
+Este programa condensa varias clases, cuyos objetivos son:
+
+\begin{enumerate}
+  \item Sumar dos matrices de tamaño 2x2.
+  \item Sumar y restar dos matrices de tamaño arbitrario, \(n\)x\(m\).
+  \item Multiplicar dos matrices de tamaño arbitrario, \(n\)x\(m\) y \(m\)x\(k\).
+\end{enumerate}
+
+\subsubsection{Tecnicismos}
+
+Arquitectura basada en \ref{sec:genarc:python}.
+
+\subsubsection{Código relevante}
+
+El núcleo del código contiene dos funciones, las cuales realizan las operaciones lineales (suma y resta) y la multiplicación, respectivamente
+
+\begin{minted}{python3}
+
+  def linear_operator (a: list[list[float]], b: list[list[float]], op: Callable[[float, float], float]):
+
+    if len (a) != len (b):
+      raise Exception (f'incompatible matrix sizes ({len (a)} against {len (b)} rows)')
+
+    if len (a [0]) != len (b [0]):
+      raise Exception (f'incompatible matrix sizes ({len (a [0])} against {len (b [0])} columns)')
+
+    def do_cols (a: list[float], b: list[float]):
+
+      for e1, e2 in zip (a, b):
+        yield op (e1, e2)
+
+    def do_rows (a: list[list[float]], b: list[list[float]]):
+    
+      for e1, e2 in zip (a, b):
+        yield list (do_cols (e1, e2))
+
+    return list (do_rows (a,  b))
+
+  def matrix_product (a: list[list[float]], b: list[list[float]]):
+
+    if len (a [0]) != len (b):
+      raise Exception(f'incompatible matrix sizes ({len (a [0])} columns against {len (b)} rows)')
+
+    def flip (m: list[list[float]]):
+
+      for i in range (len (m [0])):
+        yield list (( r [i] for r in b ))
+
+    t = list (flip (b))
+
+    def mul_abs (r: list[float], t: list[float]):
+
+      for a, b in zip (r, t):
+        yield a * b
+
+    def mul_cols (r: list[float], t: list[list[float]]):
+
+      for col in t:
+        yield sum (mul_abs (r, col))
+
+    def mul_rows (a: list[list[float]], t: list[list[float]]):
+
+      for row in a:
+        yield list (mul_cols (row, t))
+
+    return list (mul_rows (a, t))
+
+\end{minted}
+
+\subsubsection{Ejecución}
+
+Ver sección \ref{src:genericinstrc:python}.
+
+\subsubsection{Resultados esperados}
+
+\bashps\mintinline{bash}{python3 clase89a}
+
+\begin{itemize}
+  \item[] linear\_operator: 15.0380ns
+  \item[] \begin{verbatim}
+|  1.00 2.00 |   |  3.00 4.00 |   |  4.00 6.00 |\end{verbatim}
+  \item[] \begin{verbatim}
+|  5.00 6.00 | + |  7.00 8.00 | = |  12.00 14.00 |\end{verbatim}
+\end{itemize}
+
+\bashps\mintinline{bash}{python3 clase89a}
+
+\begin{itemize}
+  \item[] linear\_operator: 15.0380ns
+  \item[] \begin{verbatim}
+|  1.00 2.00 |   |  3.00 4.00 |   |  17.00 20.00 |\end{verbatim}
+  \item[] \begin{verbatim}
+|  5.00 6.00 | * |  7.00 8.00 | = |  57.00 68.00 |\end{verbatim}
+\end{itemize}
+
+\subsubsection{Liga de \textbf{Github}}
+
+\href{https://github.com/MarcosHCK/master-programming/tree/master/clase89a}{Aquí \faGithubSquare}
+
+\subsection{Programa 2}
+
+\subsubsection{Objetivos}
+
+Representar gráficamente una matriz de tamaño 2x2. Para ello, usar dicha matriz como una transformación del plano cartesiano.
+
+\subsubsection{Tecnicismos}
+
+Arquitectura basada en \ref{sec:genarc:python}.
+
+\subsubsection{Código relevante}
+
+El núcleo del código la generación de un cuadrado de lado unidad para determinar la transformación del plano:
+
+\begin{minted}{python3}
+  square = np.array ([[ 0, 0 ], [ 1, 0 ], [ 1, 1 ],
+                      [ 0, 1 ], [ 0, 0 ]])
+\end{minted}
+
+Además, el código necesario para transformar dicho cuadrado y representarlo en el plano:
+
+\begin{minted}{python3}
+
+  # matriz inicial
+  M = np.array ([[ 1.0, 0.0 ],
+                 [ 0.0, 1.0 ]])
+
+  transformed = (M @ square.T).T
+
+  ax.plot (square [:, 0], square [:, 1], color = 'steelblue', lw = 2, label = 'Original')
+  ax.fill (square [:, 0], square [:, 1], color = 'steelblue', alpha = 0.15)
+
+  ax.plot (transformed [:, 0], transformed [:, 1], color = 'crimson', lw = 2, label = 'Transformed')
+  ax.fill (transformed [:, 0], transformed [:, 1], color = 'crimson', alpha = 0.15)
+
+\end{minted}
+
+\subsubsection{Ejecución}
+
+Ver sección \ref{src:genericinstrc:python}.
+
+\subsubsection{Resultados esperados}
+
+El comando \bashps\mintinline{bash}{python3 claseb} muestra una ventana interactiva donde se pueden modificar los valores de la matriz, y ver la transformación del plano en tiempo real.
+
+\subsubsection{Liga de \textbf{Github}}
+
+\href{https://github.com/MarcosHCK/master-programming/tree/master/claseb}{Aquí \faGithubSquare}
+
 \end{document}
