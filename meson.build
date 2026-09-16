@@ -74,6 +74,7 @@ add_project_link_arguments (cpp.get_supported_link_arguments (warning_c_link_arg
 argparse_dep = dependency ('argparse', required: true)
 
 subdir ('clase567')
+subdir ('clase89ac')
 
 summary ({
     'C compiler': cc.get_id (),

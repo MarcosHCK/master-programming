@@ -1,0 +1,13 @@
+# Copyright 2026 MarcosHCK
+#
+
+CompileFlags:
+
+  CompilationDatabase: ./builddir
+
+InlayHints:
+  
+  BlockEnd: false
+  DefaultArguments: true
+  DeducedTypes: false
+  ParameterNames: false
