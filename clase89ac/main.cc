@@ -5,12 +5,10 @@
 #include <../clase567/matrix.h>
 #include <../clase567/matrixfile.h>
 #include <../clase567/matrixoperations.h>
-#include <concepts>
+#include <chrono>
 #include <fstream>
 #include <iostream>
 #include <ranges>
-#include <stdexcept>
-#include <string>
 using namespace argparse;
 using namespace utility;
 
@@ -105,6 +103,15 @@ static inline std::ostream& print_operation (_A_matrix&& A, _B_matrix&& B, const
 return (std::cout << '\n');
 }
 
+#define MEASURE(expr) ({ \
+ ; \
+  auto __start = std::chrono::steady_clock::now (); \
+  auto __value = ((expr)); \
+  auto __stop = std::chrono::steady_clock::now (); \
+  std::cout << "took " << std::chrono::duration_cast<std::chrono::microseconds> (__stop - __start) << '\n'; \
+  __value; \
+  })
+
 static int work (ArgumentParser& parser)
 {
 
@@ -122,16 +129,19 @@ static int work (ArgumentParser& parser)
   switch (op [0])
     {
 
-    case '+': print_operation (A, B, op, A + B);
+    case '+': print_operation (A, B, op, MEASURE (A + B));
       break;
 
-    case '-': print_operation (A, B, op, A - B);
+    case '-': print_operation (A, B, op, MEASURE (A - B));
       break;
 
-    case '*': print_operation (A, B, op, A * B);
+    case '*': print_operation (A, B, op, MEASURE (A * B));
       break;
 
-    case '/': print_operation (A, B, op, A * (B ^ inverse));
+    case '/': print_operation (A, B, op, MEASURE (A * (B ^ inverse)));
+      break;
+
+    case '%': print_operation (A, B, op, MEASURE ((B ^ inverse) * A));
       break;
 
     default:
