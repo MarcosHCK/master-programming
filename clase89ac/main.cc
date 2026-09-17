@@ -29,7 +29,8 @@ int main (int argc, char* argv[])
     { parser.parse_args (argc, argv); }
   catch (const std::exception &excpt)
     { std::cerr << excpt.what () << std::endl;
-      std::cerr << parser; }
+      std::cerr << parser;
+      return 1; }
 
   try
     { return work (parser); }
@@ -109,9 +110,16 @@ static int work (ArgumentParser& parser)
 
   auto file = parser.get<std::string> ("input");
   auto stream = std::ifstream (file, std::ios::in);
+
+  if (! stream)
+    throw wrap_stacktrace<std::invalid_argument> ("cannot open file " + file);
+
   auto [ A, B, op ] = matrix_file::load_operation<double> (stream);
 
-  if (1 == op.length ()) switch (op [0])
+  if (1 != op.length ())
+    throw wrap_stacktrace<std::invalid_argument> ("invalid operation " + op);
+
+  switch (op [0])
     {
 
     case '+': print_operation (A, B, op, A + B);

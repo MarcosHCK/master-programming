@@ -26,7 +26,8 @@ int main (int argc, char* argv[])
     { parser.parse_args (argc, argv); }
   catch (const std::exception &excpt)
     { std::cerr << excpt.what () << std::endl;
-      std::cerr << parser; }
+      std::cerr << parser;
+      return 1; }
 
   try
     { return work (parser); }

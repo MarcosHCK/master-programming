@@ -122,7 +122,7 @@ def print_operation (a: list[list[float]], b: list[list[float]], r: list[list[fl
         return next_p (None, nc)
 
   cr_row = 0
-  op_row = max (( len (m) for m in ms )) // 2
+  op_row = min (( len (m) for m in ms )) // 2
 
   while any (( not not it for it, _ in st )):
 

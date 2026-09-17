@@ -189,7 +189,8 @@ public:
               line.append_range (to_string_element (value, pad));
             }
 
-          co_yield (line.append_range (" |"), line);
+          line.append_range (std::string (" |"));
+          co_yield line;
         }
     }
 };

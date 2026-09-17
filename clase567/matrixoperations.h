@@ -74,12 +74,12 @@ template<matrix_type _A_matrix,
 static inline matrix<R> operator~ (_A_matrix&& A)
 {
 
-  matrix<R> M (A.get_rows (), A.get_cols ());
+  matrix<R> M (A.get_cols (), A.get_rows ());
 
   for (unsigned c = 0; c < A.get_cols (); ++c)
   for (unsigned r = 0; r < A.get_rows (); ++r)
     {
-      M [r, c] = A [c, r];
+      M [c, r] = A [r, c];
     }
 return M;
 }
@@ -129,7 +129,7 @@ static inline matrix<R> operator* (_A_matrix&& A, _B_matrix&& B)
                      | std::views::transform ([](auto&& p) noexcept -> R
                         { return static_cast<R> (std::get<0> (p)) * static_cast<R> (std::get<1> (p)); });
 
-          span0 [c + r * M.get_cols ()] = std::accumulate (chain.begin (), chain.end (), 0);
+          span0 [c + r * M.get_cols ()] = std::accumulate (chain.begin (), chain.end (), (R) 0);
         }
     }
 return M;
@@ -180,6 +180,9 @@ static inline matrix<R> operator^ (_A_matrix&& A, std::integral_constant<int, -1
   auto span1 = std::span<typename std::remove_cvref_t<_A_matrix>::value_type> (C.data (), C.get_cols () * C.get_rows ());
   auto span0 = std::span<typename std::remove_cvref_t<_A_matrix>::value_type> (M.data (), M.get_cols () * M.get_rows ());
   auto det = A.template determinant<R> ();
+
+  if (det == (R) 0)
+    throw utility::wrap_stacktrace<std::invalid_argument> ("matrix is not invertible (determinant is zero)");
 
   std::ranges::copy (std::views::all (span1) | std::views::transform ([=] (R element) noexcept -> R
                       { return element / det; }), span0.begin ());
