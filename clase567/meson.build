@@ -15,7 +15,7 @@ __utils_dep = declare_dependency (
 __matrix_lib = static_library ('matrix',
   dependencies: [ __utils_dep ],
   include_directories: include_directories ('.'),
-  sources: [ 'matrix.cc', 'matrix.h', 'matrixbase.h', 'matrixfile.h', 'parsen.h' ])
+  sources: [ 'matrix.cc', 'matrix.h', 'matrixbase.h', 'matrixfile.h', 'matrixoperations.h', 'parsen.h' ])
 
 __matrix_dep = declare_dependency (
   dependencies: __utils_dep,

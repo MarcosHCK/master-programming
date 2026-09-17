@@ -1,12 +1,15 @@
 /* Copyright 2026 MarcosHCK
  */
-#include "matrixfile.h"
 #include <argparse/argparse.hpp>
 #include <../clase567/exception.h>
 #include <../clase567/matrix.h>
 #include <../clase567/matrixfile.h>
+#include <../clase567/matrixoperations.h>
+#include <concepts>
 #include <fstream>
 #include <iostream>
+#include <ranges>
+#include <stdexcept>
 #include <string>
 using namespace argparse;
 using namespace utility;
@@ -43,14 +46,88 @@ int main (int argc, char* argv[])
 return 1;
 }
 
+template<matrix_type _A_matrix>
+static inline size_t biggest_number (_A_matrix&& A) noexcept
+{
+
+  auto span = std::span<typename std::remove_cvref_t<_A_matrix>::value_type> (A.data (), A.get_rows () * A.get_cols ());
+
+  auto max = std::ranges::max (std::views::all (span) | std::views::transform ([](auto e) noexcept -> size_t
+                                { return std::remove_cvref_t<_A_matrix>::to_string_element (e).length (); }));
+return max;
+}
+
+template<std::ranges::input_range Range>
+  requires std::convertible_to<std::ranges::range_reference_t<Range>, std::string>
+static inline std::generator<std::string> wrap_lines (Range range) noexcept
+{
+
+  size_t bigger = 0;
+
+  for (const auto line: range)
+    {
+      bigger = std::max (bigger, line.length ());
+      co_yield line;
+    }
+
+  while (true)
+    {
+      co_yield std::string (bigger, ' ');
+    }
+}
+
+template<matrix_type _A_matrix,
+         matrix_type _B_matrix,
+         matrix_type _R_matrix>
+static inline std::ostream& print_operation (_A_matrix&& A, _B_matrix&& B, const std::string& op, _R_matrix&& R) noexcept
+{
+
+  auto max = std::max (A.get_rows (), std::max (B.get_rows (), R.get_rows ()));
+  auto min = std::min (A.get_rows (), std::min (B.get_rows (), R.get_rows ()));
+  auto opp = min >> 1;
+
+  std::string eqh (3, ' ');
+  std::string oph (2 + op.length (), ' ');
+
+  auto tuples = std::views::zip (std::views::iota ((decltype (max)) 0, max),
+                                 wrap_lines (A.to_string_lines (biggest_number (A))),
+                                 wrap_lines (B.to_string_lines (biggest_number (B))),
+                                 wrap_lines (R.to_string_lines (biggest_number (R))));
+
+  for (const auto [ i, line_a, line_b, line_r ]: tuples)
+    {
+
+      std::cout << line_a << (i != opp ? oph : " " + op + " ")
+                << line_b << (i != opp ? eqh : std::string (" = "))
+                << line_r << '\n';
+    }
+return (std::cout << '\n');
+}
+
 static int work (ArgumentParser& parser)
 {
 
   auto file = parser.get<std::string> ("input");
   auto stream = std::ifstream (file, std::ios::in);
   auto [ A, B, op ] = matrix_file::load_operation<double> (stream);
-  std::cout << A.to_string () << '\n';
-  std::cout << op << '\n';
-  std::cout << B.to_string () << '\n';
+
+  if (1 == op.length ()) switch (op [0])
+    {
+
+    case '+': print_operation (A, B, op, A + B);
+      break;
+
+    case '-': print_operation (A, B, op, A - B);
+      break;
+
+    case '*': print_operation (A, B, op, A * B);
+      break;
+
+    case '/': print_operation (A, B, op, A * (B ^ inverse));
+      break;
+
+    default:
+      throw wrap_stacktrace<std::invalid_argument> ("invalid operation " + op);
+    }
 return 0;
 }
