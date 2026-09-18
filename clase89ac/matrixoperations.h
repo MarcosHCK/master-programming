@@ -279,7 +279,15 @@ static inline matrix<R> matrix_operations::operator^ (_A_matrix&& A, _B_scalar&&
   if (A.get_cols () != A.get_rows ())
     throw utility::wrap_stacktrace<std::format_error> ("only square matrices");
 
-  if constexpr (std::floating_point<std::remove_cvref<_B_scalar>>)
+  if constexpr (std::floating_point<std::remove_cvref_t<_B_scalar>>
+             || std::signed_integral<std::remove_cvref_t<_B_scalar>>)
+    {
+
+      if (scalar < 0)
+        throw utility::wrap_stacktrace<std::invalid_argument> ("negative exponent");
+    }
+
+  if constexpr (std::floating_point<std::remove_cvref_t<_B_scalar>>)
     {
 
       if (scalar != std::floorl ((long double) scalar))
