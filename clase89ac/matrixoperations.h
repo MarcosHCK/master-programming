@@ -2,7 +2,7 @@
  */
 #pragma once
 #include <../clase567/exception.h>
-#include <../clase567/matrix.h>
+#include <../clase89ac/matrix.h>
 #include <algorithm>
 #include <cmath>
 #include <numeric>
