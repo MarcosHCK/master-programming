@@ -1,0 +1,53 @@
+%{
+/* Copyright 2026 MarcosHCK
+ */
+#pragma once
+#include <../clase89ac/matrixoperations.h>
+
+namespace matrix_operations::details
+{
+
+  class id_lookup;
+  struct id_lookup_result;
+  enum class operation_id: int;
+}
+
+enum class matrix_operations::details::operation_id: int
+{
+  PLUS = 1,
+  MINUS,
+  MULTIPLY,
+  LEFT_MULTIPLY,
+  DIVIDE,
+  LEFT_DIVIDE,
+  SCALAR_POWER,
+};
+
+struct matrix_operations::details::id_lookup_result
+{
+
+  int name;
+  operation_id id;
+};
+
+%}
+
+%struct-type
+%define class-name matrix_operations::details::id_lookup
+%define hash-function-name hash
+%define lookup-function-name lookup
+%compare-strncmp
+%language=C++
+%readonly-tables
+%omit-struct-type
+
+struct matrix_operations::details::id_lookup_result { }
+%%
++, operation_id::PLUS
+-, operation_id::MINUS
+*, operation_id::MULTIPLY
+*-, operation_id::LEFT_MULTIPLY
+/, operation_id::DIVIDE
+/-, operation_id::LEFT_DIVIDE
+^, operation_id::SCALAR_POWER
+%%

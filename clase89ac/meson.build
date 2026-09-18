@@ -11,7 +11,14 @@ __matrix_dep = declare_dependency (
   include_directories: include_directories ('.'),
   link_with: __matrix_lib)
 
+gperf_exe = find_program ('gperf')
+
+__operations_lookup_tgt = custom_target ('operations-lookup',
+  command: [ gperf_exe, '--output-file', '@OUTPUT@', '-PCI', '@INPUT@' ],
+  input: 'operations.stringlist',
+  output: 'operations.stringlist.h')
+
 executable ('solution',
   dependencies: [ argparse_dep, __matrix_dep, __utils_dep ],
   include_directories: include_directories ('.'),
-  sources: 'main.cc')
+  sources: [ 'main.cc', __operations_lookup_tgt ])

@@ -5,10 +5,12 @@
 #include <../clase89ac/matrix.h>
 #include <../clase89ac/matrixfile.h>
 #include <../clase89ac/matrixoperations.h>
+#include <../clase89ac/operations.stringlist.h>
 #include <chrono>
 #include <fstream>
 #include <iostream>
 using namespace argparse;
+using namespace matrix_operations;
 using namespace utility;
 
 static int work (ArgumentParser& parser);
@@ -112,9 +114,6 @@ static int work (ArgumentParser& parser)
 
   auto [ A, B, op ] = matrix_file::load_operation<double> (stream);
 
-  if (1 != op.length ())
-    throw wrap_stacktrace<std::invalid_argument> ("invalid operation " + op);
-
 # define MEASURE(...) ({ \
   ; \
     auto __start = std::chrono::steady_clock::now (); \
@@ -124,27 +123,35 @@ static int work (ArgumentParser& parser)
     __value; \
   })
 
-  switch (op [0])
+  if (auto r = matrix_operations::details::id_lookup::lookup (op.c_str (), op.length ()); NULL == r)
+    throw wrap_stacktrace<std::invalid_argument> ("invalid operation " + op);
+
+  else switch (auto [ _, id ] = *r; id)
     {
 
-    case '+': print_operation (A, B, op, MEASURE (A + B));
+    case matrix_operations::details::operation_id::PLUS: print_operation (A, B, op, MEASURE (A + B));
       break;
 
-    case '-': print_operation (A, B, op, MEASURE (A - B));
+    case matrix_operations::details::operation_id::MINUS: print_operation (A, B, op, MEASURE (A - B));
       break;
 
-    case '*': print_operation (A, B, op, MEASURE (A * B));
+    case matrix_operations::details::operation_id::MULTIPLY: print_operation (A, B, op, MEASURE (A * B));
       break;
 
-    case '/': print_operation (A, B, op, MEASURE (A * (B ^ inverse)));
+    case matrix_operations::details::operation_id::LEFT_MULTIPLY: print_operation (A, B, op, MEASURE (B * A));
       break;
 
-    case '%': print_operation (A, B, op, MEASURE ((B ^ inverse) * A));
+    case matrix_operations::details::operation_id::DIVIDE: print_operation (A, B, op, MEASURE (A * (B ^ inverse)));
       break;
 
-    case '^': if (B.get_cols () != B.get_rows () || 1 != B.get_cols ())
-                throw wrap_stacktrace<std::invalid_argument> ("expected scalar operator");
-              print_operation (A, B, op, MEASURE (A ^ B [0, 0]));
+    case matrix_operations::details::operation_id::LEFT_DIVIDE: print_operation (A, B, op, MEASURE ((B ^ inverse) * A));
+      break;
+
+    case matrix_operations::details::operation_id::SCALAR_POWER:
+    
+        if (B.get_cols () != B.get_rows () || 1 != B.get_cols ())
+          throw wrap_stacktrace<std::invalid_argument> ("expected scalar operator");
+        print_operation (A, B, op, MEASURE (A ^ B [0, 0]));
       break;
 
     default:
