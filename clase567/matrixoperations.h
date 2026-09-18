@@ -3,13 +3,15 @@
 #pragma once
 #include <../clase567/exception.h>
 #include <../clase567/matrix.h>
+#include <algorithm>
+#include <cmath>
 #include <numeric>
 #include <ranges>
 
 template<typename T>
 concept matrix_type = requires (std::remove_cvref_t<T> value) {
   typename decltype (value)::value_type;
-  std::same_as<decltype (value), matrix<typename decltype (value)::value_type>>;
+  requires std::same_as<decltype (value), matrix<typename decltype (value)::value_type>>;
 };
 
 template<typename A, typename B>
@@ -17,9 +19,9 @@ struct higher_type
 {
 
   using type = std::conditional_t<std::same_as<A, B>, A,
-                std::conditional_t<std::floating_point<A> && ! std::floating_point<B>, A,
-                std::conditional_t<std::floating_point<B> && ! std::floating_point<A>, B,
-                std::conditional_t<(sizeof (A) > sizeof (B)), A, B>>>>;
+               std::conditional_t<std::floating_point<A> && ! std::floating_point<B>, A,
+               std::conditional_t<std::floating_point<B> && ! std::floating_point<A>, B,
+               std::conditional_t<(sizeof (A) > sizeof (B)), A, B>>>>;
 };
 
 template<matrix_type _A_matrix,
@@ -187,4 +189,77 @@ static inline matrix<R> operator^ (_A_matrix&& A, std::integral_constant<int, -1
   std::ranges::copy (std::views::all (span1) | std::views::transform ([=] (R element) noexcept -> R
                       { return element / det; }), span0.begin ());
 return M;
+}
+
+template<matrix_type _A_matrix,
+         typename _B_scalar,
+         typename R = higher_type<typename std::remove_cvref_t<_A_matrix>::value_type, std::remove_cvref_t<_B_scalar>>::type>
+static inline matrix<R> operator^ (_A_matrix&& A, _B_scalar&& scalar)
+{
+
+  if (A.get_cols () != A.get_rows ())
+    throw utility::wrap_stacktrace<std::format_error> ("only square matrices");
+
+  if constexpr (std::floating_point<std::remove_cvref<_B_scalar>>)
+    {
+
+      if (scalar != std::floorl ((long double) scalar))
+        throw utility::wrap_stacktrace<std::invalid_argument> ("fractional exponent");
+    }
+
+  auto M = matrix<R>::identity (A.get_cols ());
+  auto s = (size_t) scalar;
+
+  for (matrix<R> B = A; s > 0; B = B * B, s >>= 1)
+    {
+
+      if (1 == (s & 1))
+        M = M * B;
+    }
+return M;
+}
+
+namespace matrix_operations::details
+{
+
+  template<typename A, typename B = A>
+  concept equatable = requires (A a, B b)
+    {
+      a == b;
+      { a == b } -> std::same_as<bool>;
+    };
+
+  template<typename A, typename B = A>
+  static inline constexpr bool nothrow_equatable_v = noexcept (std::declval<A> () == std::declval<B> ());
+}
+
+template<matrix_type _A_matrix,
+         matrix_type _B_matrix,
+         typename R = higher_type<typename std::remove_cvref_t<_A_matrix>::value_type,
+                                  typename std::remove_cvref_t<_B_matrix>::value_type>::type>
+  requires matrix_operations::details::equatable<typename std::remove_cvref_t<_A_matrix>::value_type,
+                                                 typename std::remove_cvref_t<_B_matrix>::value_type>
+static inline bool operator== (_A_matrix&& A, _B_matrix&& B)
+  noexcept (matrix_operations::details::nothrow_equatable_v<typename std::remove_cvref_t<_A_matrix>::value_type,
+                                                            typename std::remove_cvref_t<_B_matrix>::value_type>)
+{
+
+  if (A.get_cols () != B.get_cols () || A.get_rows () != B.get_rows ())
+    return false;
+
+  auto span1 = std::span<typename std::remove_cvref_t<_A_matrix>::value_type> (A.data (), A.get_cols () * A.get_rows ());
+  auto span2 = std::span<typename std::remove_cvref_t<_B_matrix>::value_type> (B.data (), B.get_cols () * B.get_rows ());
+
+  if constexpr (std::same_as<typename decltype (span1)::value_type, typename decltype (span2)::value_type>
+             && std::integral<typename decltype (span1)::value_type>)
+    {
+      constexpr auto ts = sizeof (typename decltype (span1)::value_type);
+      return 0 == std::memcmp (span1.begin (), span2.begin (), span1.get_cols () * span1.get_rows () * ts);
+    }
+
+  constexpr auto noexcept_ = matrix_operations::details::nothrow_equatable_v<typename std::remove_cvref_t<_A_matrix>::value_type,
+                                                                             typename std::remove_cvref_t<_B_matrix>::value_type>;
+
+  return std::ranges::all_of (std::views::zip (span1, span2), [](auto&& p) noexcept (noexcept_) -> bool
+    { return std::get<0> (p) == std::get<1> (p); });
 }

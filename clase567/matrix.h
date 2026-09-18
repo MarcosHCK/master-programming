@@ -25,6 +25,18 @@ public:
       _values.resize (get_cols () * get_rows (), 0.0);
     }
 
+  template<typename O>
+    requires (! std::same_as<T, O>)
+  inline matrix (const matrix<O>& o): matrix_base (o.get_rows (), o.get_cols ())
+    {
+
+      auto range = std::views::all (o._values)
+                 | std::views::transform ([](auto&& e) noexcept { return static_cast<T> (e); });
+
+      _values.reserve (get_rows () * get_cols ());
+      std::copy (range.begin (), range.end (), std::back_inserter (_values));
+    }
+
   inline constexpr T* data () noexcept { return _values.data (); }
   inline constexpr const T* data () const noexcept { return _values.data (); }
 
@@ -89,6 +101,16 @@ public:
               });
           }
         }
+    }
+
+  static inline matrix<T> identity (unsigned n)
+    {
+
+      matrix<T> M (n, n);
+
+      for (unsigned i = 0; i < n; ++i)
+        M [i, i] = (T) 1;
+    return M;
     }
 
   template<std::ranges::input_range Range>

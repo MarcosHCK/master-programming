@@ -8,7 +8,6 @@
 #include <chrono>
 #include <fstream>
 #include <iostream>
-#include <ranges>
 using namespace argparse;
 using namespace utility;
 
@@ -78,7 +77,7 @@ static inline std::generator<std::string> wrap_lines (Range range) noexcept
 template<matrix_type _A_matrix,
          matrix_type _B_matrix,
          matrix_type _R_matrix>
-static inline std::ostream& print_operation (_A_matrix&& A, _B_matrix&& B, const std::string& op, _R_matrix&& R) noexcept
+static inline void print_operation (_A_matrix&& A, _B_matrix&& B, const std::string& op, _R_matrix&& R) noexcept
 {
 
   auto max = std::max (A.get_rows (), std::max (B.get_rows (), R.get_rows ()));
@@ -100,17 +99,7 @@ static inline std::ostream& print_operation (_A_matrix&& A, _B_matrix&& B, const
                 << line_b << (i != opp ? eqh : std::string (" = "))
                 << line_r << '\n';
     }
-return (std::cout << '\n');
 }
-
-#define MEASURE(expr) ({ \
- ; \
-  auto __start = std::chrono::steady_clock::now (); \
-  auto __value = ((expr)); \
-  auto __stop = std::chrono::steady_clock::now (); \
-  std::cout << "took " << std::chrono::duration_cast<std::chrono::microseconds> (__stop - __start) << '\n'; \
-  __value; \
-  })
 
 static int work (ArgumentParser& parser)
 {
@@ -125,6 +114,15 @@ static int work (ArgumentParser& parser)
 
   if (1 != op.length ())
     throw wrap_stacktrace<std::invalid_argument> ("invalid operation " + op);
+
+# define MEASURE(...) ({ \
+  ; \
+    auto __start = std::chrono::steady_clock::now (); \
+    auto __value = ((__VA_ARGS__)); \
+    auto __stop = std::chrono::steady_clock::now (); \
+    std::cout << "took " << std::chrono::duration_cast<std::chrono::microseconds> (__stop - __start) << '\n'; \
+    __value; \
+  })
 
   switch (op [0])
     {
@@ -144,8 +142,14 @@ static int work (ArgumentParser& parser)
     case '%': print_operation (A, B, op, MEASURE ((B ^ inverse) * A));
       break;
 
+    case '^': if (B.get_cols () != B.get_rows () || 1 != B.get_cols ())
+                throw wrap_stacktrace<std::invalid_argument> ("expected scalar operator");
+              print_operation (A, B, op, MEASURE (A ^ B [0, 0]));
+      break;
+
     default:
       throw wrap_stacktrace<std::invalid_argument> ("invalid operation " + op);
     }
+#undef MEASURE
 return 0;
 }
