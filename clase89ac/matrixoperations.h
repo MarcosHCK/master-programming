@@ -81,8 +81,7 @@ namespace matrix_operations
 
   template<matrix_type _A_matrix,
            typename _B_scalar,
-           typename R = details::higher_type<typename std::remove_cvref_t<_A_matrix>::value_type,
-                                             std::remove_cvref_t<_B_scalar>>::type>
+           typename R = typename std::remove_cvref_t<_A_matrix>::value_type>
   static inline matrix<R> operator^ (_A_matrix&& A, _B_scalar&& scalar);
 
   template<matrix_type _A_matrix,
@@ -115,14 +114,10 @@ static inline matrix<R> matrix_operations::operator+ (_A_matrix&& A, _B_matrix&&
     }
 
   matrix<R> M (A.get_rows (), A.get_cols ());
-
-  auto span1 = std::span<typename std::remove_cvref_t<_A_matrix>::value_type> (A.data (), A.get_cols () * A.get_rows ());
-  auto span2 = std::span<typename std::remove_cvref_t<_A_matrix>::value_type> (B.data (), B.get_cols () * B.get_rows ());
-  auto span0 = std::span<typename std::remove_cvref_t<_A_matrix>::value_type> (M.data (), M.get_cols () * M.get_rows ());
   
-  std::ranges::copy (std::views::zip (span1, span2) | std::views::transform ([](auto&& pair) -> R
+  std::ranges::copy (std::views::zip (A, B) | std::views::transform ([](auto&& pair) -> R
                       { return static_cast<R> (std::get<0> (pair)) + static_cast<R> (std::get<1> (pair)); }),
-                     span0.begin ());
+                     M.begin ());
 return M;
 }
 
@@ -145,14 +140,10 @@ static inline matrix<R> matrix_operations::operator- (_A_matrix&& A, _B_matrix&&
     }
 
   matrix<R> M (A.get_rows (), A.get_cols ());
-
-  auto span1 = std::span<typename std::remove_cvref_t<_A_matrix>::value_type> (A.data (), A.get_cols () * A.get_rows ());
-  auto span2 = std::span<typename std::remove_cvref_t<_A_matrix>::value_type> (B.data (), B.get_cols () * B.get_rows ());
-  auto span0 = std::span<typename std::remove_cvref_t<_A_matrix>::value_type> (M.data (), M.get_cols () * M.get_rows ());
   
-  std::ranges::copy (std::views::zip (span1, span2) | std::views::transform ([](auto&& pair) -> R
+  std::ranges::copy (std::views::zip (A, B) | std::views::transform ([](auto&& pair) -> R
                       { return static_cast<R> (std::get<0> (pair)) - static_cast<R> (std::get<1> (pair)); }),
-                     span0.begin ());
+                     M.begin ());
 return M;
 }
 
@@ -162,13 +153,9 @@ static inline matrix<R> matrix_operations::operator- (_A_matrix&& A)
 {
 
   matrix<R> M (A.get_rows (), A.get_cols ());
-
-  auto span1 = std::span<typename std::remove_cvref_t<_A_matrix>::value_type> (A.data (), A.get_cols () * A.get_rows ());
-  auto span0 = std::span<typename std::remove_cvref_t<_A_matrix>::value_type> (M.data (), M.get_cols () * M.get_rows ());
   
-  std::ranges::copy (std::views::all (span1) | std::views::transform ([](auto&& e) -> R
-                      { return - static_cast<R> (e); }),
-                     span0.begin ());
+  std::ranges::copy (std::views::all (A) | std::views::transform ([](auto&& e) -> R
+                      { return - static_cast<R> (e); }), M.begin ());
 return M;
 }
 
@@ -203,15 +190,13 @@ static inline matrix<R> matrix_operations::operator^ (_A_matrix&& A, decltype (m
   matrix<R> M (A.get_rows (), A.get_cols ());
   matrix<R> C = A ^ std::integral_constant<char, 'A'> ();
 
-  auto span1 = std::span<typename std::remove_cvref_t<_A_matrix>::value_type> (C.data (), C.get_cols () * C.get_rows ());
-  auto span0 = std::span<typename std::remove_cvref_t<_A_matrix>::value_type> (M.data (), M.get_cols () * M.get_rows ());
   auto det = A.template determinant<R> ();
 
   if (det == (R) 0)
     throw utility::wrap_stacktrace<std::invalid_argument> ("matrix is not invertible (determinant is zero)");
 
-  std::ranges::copy (std::views::all (span1) | std::views::transform ([=] (R element) noexcept -> R
-                      { return element / det; }), span0.begin ());
+  std::ranges::copy (std::views::all (A) | std::views::transform ([=] (R element) noexcept -> R
+                      { return element / det; }), M.begin ());
 return M;
 }
 
@@ -245,27 +230,25 @@ static inline matrix<R> matrix_operations::operator* (_A_matrix&& A, _B_matrix&&
   matrix<R> M (A.get_rows (), B.get_cols ());
 
   auto t = B ^ transpose;
-  auto span1 = std::span<typename std::remove_cvref_t<_A_matrix>::value_type> (A.data (), A.get_cols () * A.get_rows ());
-  auto span2 = std::span<typename std::remove_cvref_t<_A_matrix>::value_type> (t.data (), t.get_cols () * t.get_rows ());
-  auto span0 = std::span<typename std::remove_cvref_t<_A_matrix>::value_type> (M.data (), M.get_cols () * M.get_rows ());
 
   for (unsigned r = 0; r < M.get_rows (); ++r)
     {
 
-      auto a_row_p = & span1 [r * A.get_cols ()];
-      auto a_row_s = std::span<typename decltype (span1)::value_type> (a_row_p, A.get_cols ());
+      auto a_row_p = A.begin () + r * A.get_cols ();
 
       for (unsigned c = 0; c < M.get_cols (); ++c)
         {
 
-          auto b_col_p = & span2 [c * t.get_cols ()];
-          auto b_col_s = std::span<typename decltype (span1)::value_type> (b_col_p, t.get_cols ());
+          auto b_col_p = t.begin () + c * t.get_cols ();
 
-          auto chain = std::views::zip (a_row_s, b_col_s)
+          auto&& a_row_s = std::ranges::subrange (a_row_p, a_row_p + A.get_cols ());
+          auto&& b_col_s = std::ranges::subrange (b_col_p, b_col_p + t.get_cols ());
+
+          auto chain = std::views::zip (std::move (a_row_s), std::move (b_col_s))
                      | std::views::transform ([](auto&& p) noexcept -> R
                         { return static_cast<R> (std::get<0> (p)) * static_cast<R> (std::get<1> (p)); });
 
-          span0 [c + r * M.get_cols ()] = std::accumulate (chain.begin (), chain.end (), (R) 0);
+          M [r, c] = std::accumulate (chain.begin (), chain.end (), (R) 0);
         }
     }
 return M;
@@ -316,19 +299,13 @@ static inline bool matrix_operations::operator== (_A_matrix&& A, _B_matrix&& B)
   if (A.get_cols () != B.get_cols () || A.get_rows () != B.get_rows ())
     return false;
 
-  auto span1 = std::span<typename std::remove_cvref_t<_A_matrix>::value_type> (A.data (), A.get_cols () * A.get_rows ());
-  auto span2 = std::span<typename std::remove_cvref_t<_B_matrix>::value_type> (B.data (), B.get_cols () * B.get_rows ());
-
-  if constexpr (std::same_as<typename decltype (span1)::value_type, typename decltype (span2)::value_type>
-             && std::integral<typename decltype (span1)::value_type>)
-    {
-      constexpr auto ts = sizeof (typename decltype (span1)::value_type);
-      return 0 == std::memcmp (span1.begin (), span2.begin (), span1.get_cols () * span1.get_rows () * ts);
-    }
+  if constexpr (std::same_as<typename std::remove_cvref_t<_A_matrix>::value_type,
+                             typename std::remove_cvref_t<_B_matrix>::value_type>)
+    return A.operator== (B);
 
   constexpr auto noexcept_ = matrix_operations::details::nothrow_equatable_v<typename std::remove_cvref_t<_A_matrix>::value_type,
                                                                              typename std::remove_cvref_t<_B_matrix>::value_type>;
 
-  return std::ranges::all_of (std::views::zip (span1, span2), [](auto&& p) noexcept (noexcept_) -> bool
+  return std::ranges::all_of (std::views::zip (A, B), [](auto&& p) noexcept (noexcept_) -> bool
     { return std::get<0> (p) == std::get<1> (p); });
 }

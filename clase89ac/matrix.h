@@ -16,6 +16,18 @@ template<typename T = double> class matrix: public matrix_base
 {
 
   std::vector<T> _values;
+
+  template<typename To,
+           std::ranges::input_range Range>
+  static inline auto range_cast (Range&& range) noexcept
+    {
+
+      using From = std::ranges::range_reference_t<Range>;
+      constexpr bool Noexcept = std::is_nothrow_convertible_v<From, To>;
+
+    return range | std::views::transform ([](const auto& e) noexcept (Noexcept) { return (To) e; });
+    }
+
 public:
 
   using value_type = T;
@@ -25,29 +37,39 @@ public:
       _values.resize (get_cols () * get_rows (), 0.0);
     }
 
-  template<typename O>
-    requires (! std::same_as<T, O>)
-  inline matrix (const matrix<O>& o): matrix_base (o.get_rows (), o.get_cols ())
+  template<std::ranges::input_range Range>
+    requires std::convertible_to<std::ranges::range_reference_t<Range>, T>
+  inline matrix (unsigned rows, unsigned cols, Range&& range): matrix_base (rows, cols)
     {
 
-      auto range = std::views::all (o._values)
-                 | std::views::transform ([](auto&& e) noexcept { return static_cast<T> (e); });
+      for (_values.reserve (get_cols () * get_rows ()); const auto& element: range)
+           _values.push_back (element);
 
-      _values.reserve (get_rows () * get_cols ());
-      std::copy (range.begin (), range.end (), std::back_inserter (_values));
+      _values.resize (get_cols () * get_rows ());
     }
 
   inline constexpr T* data () noexcept { return _values.data (); }
   inline constexpr const T* data () const noexcept { return _values.data (); }
 
-  inline T& operator[] (unsigned r, unsigned c)
+  inline decltype (std::declval<std::vector<T>> () [0]) operator[] (unsigned r, unsigned c)
     {
       return _values [c + r * get_cols ()];
     }
 
-  inline T operator[] (unsigned r, unsigned c) const
+  inline decltype (std::declval<const std::vector<T>> () [0]) operator[] (unsigned r, unsigned c) const
     {
       return _values [c + r * get_cols ()];
+    }
+
+  inline bool operator== (const matrix<T>& o) const noexcept
+    {
+    return _values == o._values;
+    }
+
+  template<typename O>
+  inline operator matrix<O> () const
+    {
+    return matrix<O> (get_rows (), get_cols (), range_cast<O> (_values));
     }
 
   inline T& at (std::pair<unsigned, unsigned> index)
@@ -61,6 +83,10 @@ public:
       auto [ r, c ] = (check_bounds (index), index);
     return operator[] (r, c);
     }
+
+  inline auto begin () const noexcept { return _values.begin (); }
+  inline auto begin () noexcept { return _values.begin (); }
+  inline auto cbegin () noexcept { return _values.cbegin (); }
 
   template<typename R = T>
   inline R determinant () const
@@ -102,6 +128,10 @@ public:
           }
         }
     }
+
+  inline auto end () const noexcept { return _values.end (); }
+  inline auto end () noexcept { return _values.end (); }
+  inline auto cend () noexcept { return _values.cend (); }
 
   static inline matrix<T> identity (unsigned n)
     {
