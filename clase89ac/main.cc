@@ -277,8 +277,8 @@ static inline matrix<bool> popularize (const matrix<bool>& F, unsigned v)
 {
 
   genetic_optimization<matrix<bool>> minimizer ({
-      .mutation_rate = 0.6,
-      .mutation_sigma = 0.2,
+      .mutation_rate = 0.2,
+      .mutation_sigma = 0.8,
     });
 
   auto progress_bar = std::make_unique<indicators::BlockProgressBar> (
