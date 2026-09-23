@@ -1,17 +1,19 @@
 /* Copyright 2026 MarcosHCK
  */
-#include <algorithm>
-#include <argparse/argparse.hpp>
 #include <../clase567/exception.h>
 #include <../clase89ac/geneticopt.h>
 #include <../clase89ac/matrix.h>
 #include <../clase89ac/matrixfile.h>
 #include <../clase89ac/matrixoperations.h>
 #include <../clase89ac/operations.stringlist.h>
+#include <algorithm>
+#include <argparse/argparse.hpp>
 #include <chrono>
 #include <fstream>
+#include <indicators/block_progress_bar.hpp>
+#include <indicators/cursor_control.hpp>
+#include <indicators/dynamic_progress.hpp>
 #include <iostream>
-#include <ranges>
 using namespace argparse;
 using namespace matrix_operations;
 using namespace utility;
@@ -210,10 +212,10 @@ template<>
 struct fitness_ranker<matrix<bool>>
 {
 
-  matrix<bool>& A;
+  const matrix<bool>& A;
   unsigned n, v, fact;
 
-  inline fitness_ranker (matrix<bool>& _A, unsigned _n, unsigned _v) noexcept:
+  inline fitness_ranker (const matrix<bool>& _A, unsigned _n, unsigned _v) noexcept:
       A (_A), n (_n), v (_v)
     {
       fact = n * n;
@@ -270,6 +272,35 @@ struct uniform_distribution<matrix<bool>, RandomEngine>
     return M;
     }
 };
+
+static inline matrix<bool> popularize (const matrix<bool>& F, unsigned v)
+{
+
+  genetic_optimization<matrix<bool>> minimizer ({
+      .mutation_rate = 0.6,
+      .mutation_sigma = 0.2,
+    });
+
+  auto progress_bar = std::make_unique<indicators::BlockProgressBar> (
+
+      indicators::option::BarWidth { 80 },
+      indicators::option::ForegroundColor { indicators::Color::white },
+      indicators::option::ShowPercentage { true },
+      indicators::option::FontStyles { std::vector { indicators::FontStyle::bold } },
+      indicators::option::MaxProgress { minimizer.get_config ().generations }
+    );
+
+  indicators::DynamicProgress<indicators::BlockProgressBar> dynamic_bar (*progress_bar);
+  indicators::show_console_cursor (false);
+
+  dynamic_bar.set_option (indicators::option::HideBarWhenComplete { true });
+
+  auto n = F.get_cols ();
+  auto R = minimizer.find_best (fitness_ranker<matrix<bool>> (F, n, v), uniform_distribution<matrix<bool>, std::mt19937> (n),
+                                [&bar = dynamic_bar](int g) { bar [0].tick (); });
+
+return (dynamic_bar [0].mark_as_completed (), dynamic_bar.print_progress (), indicators::show_console_cursor (true), R);
+}
 
 static int work (ArgumentParser& parser)
 {
@@ -341,17 +372,11 @@ static int work (ArgumentParser& parser)
         if (0 > v || v > A.get_cols ())
           throw wrap_stacktrace<std::invalid_argument> ("expected node number");
 
-        genetic_optimization<matrix<bool>> minimizer ({
-            .mutation_rate = 0.6,
-            .mutation_sigma = 0.2,
-          });
-
-        auto A_ = matrix<bool> (A);
-        auto R = MEASURE (minimizer.find_best (fitness_ranker<matrix<bool>> (A_, n, v), uniform_distribution<matrix<bool>, std::mt19937> (n)));
+        auto R = MEASURE (popularize (A, v));
 
         print_operation (A, B, op, matrix<double> (R));
 
-        auto [ _, _, diff ] = (fitness_ranker<matrix<bool>> (A_, n, v)).rank (R);
+        auto [ _, _, diff ] = (fitness_ranker<matrix<bool>> (A, n, v)).rank (R);
         matrix<unsigned> G (1, 1, std::vector<unsigned> { 2 });
 
         std::cout << "differences = " << diff << std::endl;

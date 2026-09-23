@@ -20,8 +20,10 @@ __operations_lookup_tgt = custom_target ('operations-lookup',
   input: 'operations.stringlist',
   output: 'operations.stringlist.h')
 
+indicators_dep = dependency ('indicators')
+
 executable ('solution',
   cpp_pch: 'pch/main.h',
-  dependencies: [ argparse_dep, __matrix_dep, __utils_dep ],
+  dependencies: [ argparse_dep, indicators_dep, __matrix_dep, __utils_dep ],
   include_directories: include_directories ('.'),
   sources: [ 'main.cc', __operations_lookup_tgt ])

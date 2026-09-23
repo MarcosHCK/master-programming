@@ -3,7 +3,6 @@
 #pragma once
 #include <algorithm>
 #include <execution>
-#include <iostream>
 #include <mutex>
 #include <random>
 #include <ranges>
@@ -77,6 +76,8 @@ struct genetic_optimization_config
 template<typename T, std::random_engine<unsigned long> RandomEngine> struct combinator;
 template<typename T> struct fitness_ranker;
 template<typename T, std::random_engine<unsigned long> RandomEngine> struct uniform_distribution;
+
+struct progress_reporter { inline void operator() (int g) const noexcept { }; };
 
 template<typename V = double,
          std::random_engine<unsigned long> RandomEngine = std::mt19937>
@@ -226,31 +227,41 @@ public:
   inline constexpr auto& get_config () const noexcept { return _config; }
 
   template<std::invocable_r_v<Rank, const T&> FitnessRanker,
-           std::invocable_r_v<T, RandomEngine&> UniformDistribution>
+           std::invocable_r_v<T, RandomEngine&> UniformDistribution,
+           std::invocable<int> ProgressReporter = progress_reporter>
   inline T find_best (FitnessRanker&& ranker = fitness_ranker<T> (),
-                      UniformDistribution&& uniform_generator = uniform_distribution<T, RandomEngine> ())
+                      UniformDistribution&& uniform_generator = uniform_distribution<T, RandomEngine> (),
+                      ProgressReporter&& progress_reporter = ::progress_reporter ())
     {
 
       auto rng_seed = (std::random_device { }) ();
-    return find_best (rng_seed, std::forward<FitnessRanker> (ranker), std::forward<UniformDistribution> (uniform_generator));
+
+      return find_best (rng_seed, std::forward<FitnessRanker> (ranker), std::forward<UniformDistribution> (uniform_generator),
+                                  std::forward<ProgressReporter> (progress_reporter));
     }
 
   template<std::invocable_r_v<Rank, const T&> FitnessRanker,
-           std::invocable_r_v<T, RandomEngine&> UniformDistribution>
+           std::invocable_r_v<T, RandomEngine&> UniformDistribution,
+           std::invocable<int> ProgressReporter = progress_reporter>
   inline T find_best (typename RandomEngine::result_type rng_seed,
                       FitnessRanker&& ranker = fitness_ranker<T> (),
-                      UniformDistribution&& uniform_generator = uniform_distribution<T, RandomEngine> ())
+                      UniformDistribution&& uniform_generator = uniform_distribution<T, RandomEngine> (),
+                      ProgressReporter&& progress_reporter = ::progress_reporter ())
     {
 
       RandomEngine rng (rng_seed);
-    return find_best (rng, std::forward<FitnessRanker> (ranker), std::forward<UniformDistribution> (uniform_generator));
+
+      return find_best (rng, std::forward<FitnessRanker> (ranker), std::forward<UniformDistribution> (uniform_generator),
+                             std::forward<ProgressReporter> (progress_reporter));
     }
 
   template<std::invocable_r_v<Rank, const T&> FitnessRanker,
-           std::invocable_r_v<T, RandomEngine&> UniformDistribution>
+           std::invocable_r_v<T, RandomEngine&> UniformDistribution,
+           std::invocable<int> ProgressReporter = progress_reporter>
   inline T find_best (RandomEngine& rng,
                       FitnessRanker&& ranker = fitness_ranker<T> (),
-                      UniformDistribution&& uniform_generator = uniform_distribution<T, RandomEngine> ())
+                      UniformDistribution&& uniform_generator = uniform_distribution<T, RandomEngine> (),
+                      ProgressReporter&& progress_reporter = ::progress_reporter ())
     {
 
       Container<T> population, swap_population;
@@ -290,12 +301,14 @@ public:
       for (typename Container<T>::size_type i = elite_size, j = 0; i < population_size; i += 2)
         peasant_grounds [j++] = i;
 
+      std::mutex global_rng_m;
+
       for (decltype (_config.generations) g = 0; g < _config.generations;
            ++g, fitness.swap (swap_fitness), population.swap (swap_population))
         {
 
-          if (0 == (g % 10))
-            std::cout << "generation " << g << std::endl;
+          if constexpr (! std::same_as<::progress_reporter, ProgressReporter>)
+            progress_reporter (g);
 
           best_order (order, comparer);
 
@@ -304,8 +317,6 @@ public:
               swap_fitness [i] = fitness [order [i]];
               swap_population [i] = population [order [i]];
             }
-
-          std::mutex global_rng_m;
 
           std::for_each (std::execution::par, peasant_grounds.begin (), peasant_grounds.end (), [&](auto i)
             {
@@ -320,7 +331,6 @@ public:
 
               auto& parent1 = population [tournament (local_rng, comparer)];
               auto& parent2 = population [tournament (local_rng, comparer)];
-
               auto [ child1, child2 ] = Combinator (local_rng, _config, parent1, parent2);
 
               swap_fitness [i] = ranker (child1);
