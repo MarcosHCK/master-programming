@@ -1,9 +1,9 @@
 /* Copyright 2026 MarcosHCK
  */
 #pragma once
+#include <../clase89ac/locked.h>
 #include <algorithm>
 #include <execution>
-#include <mutex>
 #include <random>
 #include <ranges>
 #include <vector>
@@ -301,7 +301,7 @@ public:
       for (typename Container<T>::size_type i = elite_size, j = 0; i < population_size; i += 2)
         peasant_grounds [j++] = i;
 
-      std::mutex global_rng_m;
+      locked<RandomEngine&> global_rng (rng);
 
       for (decltype (_config.generations) g = 0; g < _config.generations;
            ++g, fitness.swap (swap_fitness), population.swap (swap_population))
@@ -325,8 +325,9 @@ public:
 
               thread_local RandomEngine local_rng = [&] noexcept (noexcept_)
                 {
-                  std::lock_guard lock (global_rng_m);
-                  return RandomEngine (rng ());
+                  auto [ lock, _rng ] = *global_rng;
+                  std::seed_seq seed { _rng (), _rng (), _rng (), _rng () };
+                return RandomEngine (seed);
                 } ();
 
               auto& parent1 = population [tournament (local_rng, comparer)];
