@@ -10,13 +10,6 @@
 namespace matrix_operations
 {
 
-  template<typename T>
-  concept matrix_type = requires (std::remove_cvref_t<T> value)
-    {
-      typename decltype (value)::value_type;
-      requires std::same_as<decltype (value), matrix<typename decltype (value)::value_type>>;
-    };
-
   namespace details
     {
 
@@ -95,8 +88,8 @@ namespace matrix_operations
                                                               typename std::remove_cvref_t<_B_matrix>::value_type>);
 }
 
-template<matrix_operations::matrix_type _A_matrix,
-         matrix_operations::matrix_type _B_matrix,
+template<matrix_type _A_matrix,
+         matrix_type _B_matrix,
          typename R>
 static inline matrix<R> matrix_operations::operator+ (_A_matrix&& A, _B_matrix&& B)
 {
@@ -121,8 +114,8 @@ static inline matrix<R> matrix_operations::operator+ (_A_matrix&& A, _B_matrix&&
 return M;
 }
 
-template<matrix_operations::matrix_type _A_matrix,
-         matrix_operations::matrix_type _B_matrix,
+template<matrix_type _A_matrix,
+         matrix_type _B_matrix,
          typename R>
 static inline matrix<R> matrix_operations::operator- (_A_matrix&& A, _B_matrix&& B)
 {
@@ -147,7 +140,7 @@ static inline matrix<R> matrix_operations::operator- (_A_matrix&& A, _B_matrix&&
 return M;
 }
 
-template<matrix_operations::matrix_type _A_matrix,
+template<matrix_type _A_matrix,
          typename R>
 static inline matrix<R> matrix_operations::operator- (_A_matrix&& A)
 {
@@ -159,7 +152,7 @@ static inline matrix<R> matrix_operations::operator- (_A_matrix&& A)
 return M;
 }
 
-template<matrix_operations::matrix_type _A_matrix,
+template<matrix_type _A_matrix,
          typename R>
 static inline matrix<R> matrix_operations::operator^ (_A_matrix&& A, decltype (matrix_operations::adjugate))
 {
@@ -179,7 +172,7 @@ static inline matrix<R> matrix_operations::operator^ (_A_matrix&& A, decltype (m
 return M;
 }
 
-template<matrix_operations::matrix_type _A_matrix,
+template<matrix_type _A_matrix,
          typename R>
 static inline matrix<R> matrix_operations::operator^ (_A_matrix&& A, decltype (matrix_operations::inverse))
 {
@@ -200,7 +193,7 @@ static inline matrix<R> matrix_operations::operator^ (_A_matrix&& A, decltype (m
 return M;
 }
 
-template<matrix_operations::matrix_type _A_matrix,
+template<matrix_type _A_matrix,
          typename R>
 static inline matrix<R> matrix_operations::operator^ (_A_matrix&& A, decltype (matrix_operations::transpose))
 {
@@ -215,8 +208,8 @@ static inline matrix<R> matrix_operations::operator^ (_A_matrix&& A, decltype (m
 return M;
 }
 
-template<matrix_operations::matrix_type _A_matrix,
-         matrix_operations::matrix_type _B_matrix,
+template<matrix_type _A_matrix,
+         matrix_type _B_matrix,
          typename R>
 static inline matrix<R> matrix_operations::operator* (_A_matrix&& A, _B_matrix&& B)
 {
@@ -254,7 +247,7 @@ static inline matrix<R> matrix_operations::operator* (_A_matrix&& A, _B_matrix&&
 return M;
 }
 
-template<matrix_operations::matrix_type _A_matrix,
+template<matrix_type _A_matrix,
          typename _B_scalar, typename R>
 static inline matrix<R> matrix_operations::operator^ (_A_matrix&& A, _B_scalar&& scalar)
 {
@@ -286,8 +279,8 @@ static inline matrix<R> matrix_operations::operator^ (_A_matrix&& A, _B_scalar&&
 return M;
 }
 
-template<matrix_operations::matrix_type _A_matrix,
-         matrix_operations::matrix_type _B_matrix,
+template<matrix_type _A_matrix,
+         matrix_type _B_matrix,
          typename R>
   requires matrix_operations::details::equatable<typename std::remove_cvref_t<_A_matrix>::value_type,
                                                  typename std::remove_cvref_t<_B_matrix>::value_type>

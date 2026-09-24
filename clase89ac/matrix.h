@@ -212,20 +212,26 @@ public:
     return (full.resize (full.length () - 1), full);
     }
 
-  static inline std::string to_string_element (T value, unsigned pad = 0)
+  static inline std::string to_string_element (T value, unsigned pad = 0, std::optional<std::string_view> delimiter = std::nullopt)
     {
 
       auto str = std::to_string (value);
 
       if (str.length () < pad)
         str.insert_range (str.begin (), std::string (pad - str.length (), ' '));
+
+      if (std::nullopt != delimiter)
+        str.insert_range (str.begin (), std::ranges::subrange (delimiter.value ().begin (), delimiter.value ().end ()));
+
     return str;
     }
 
-  inline std::generator<std::string> to_string_lines (unsigned pad = 0) const
+  static constexpr std::string_view space_separator = " ";
+
+  inline std::generator<std::string> to_string_lines (unsigned pad = 0, std::optional<std::string_view> delimiter = space_separator) const
     {
 
-      std::string line ("| |");
+      std::string line ("");
 
       if (_values.begin () == _values.end ())
         co_yield line;
@@ -233,16 +239,21 @@ public:
       for (auto it = _values.begin (); it != _values.end (); it += get_cols ())
         {
 
-          line.assign ("|");
+          line.erase (0, line.size ());
 
-          for (const T value: std::ranges::subrange (it, it + get_cols ()))
+          for (bool first = true; const T value: std::ranges::subrange (it, it + get_cols ()))
             {
-              line.push_back (' ');
-              line.append_range (to_string_element (value, pad));
+              line.append_range (to_string_element (value, pad, !first ? delimiter : (first = false, std::nullopt)));
             }
 
-          line.append_range (std::string (" |"));
           co_yield line;
         }
     }
+};
+
+template<typename T>
+concept matrix_type = requires (std::remove_cvref_t<T> value)
+{
+  typename decltype (value)::value_type;
+  requires std::same_as<decltype (value), matrix<typename decltype (value)::value_type>>;
 };

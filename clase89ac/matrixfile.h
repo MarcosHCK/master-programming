@@ -85,4 +85,12 @@ namespace matrix_file
 
     return { std::move (A).value (), std::move (B).value (), std::move (operation) };
     }
+
+  template<matrix_type _A_matrix>
+  static inline void save_matrix (std::ofstream& stream, _A_matrix&& A, std::optional<std::string_view> delimiter = std::nullopt)
+    {
+
+      for (auto line: A.to_string_lines (0, delimiter))
+        stream << line << "\n";
+    }
 };

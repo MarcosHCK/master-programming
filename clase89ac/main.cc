@@ -27,7 +27,16 @@ int main (int argc, char* argv[])
 
   parser.add_argument ("input")
         .help ("Input matrix file")
-        .metavar ("IMAGE.txt");
+        .metavar ("example.txt");
+
+  parser.add_argument ("--output")
+        .help ("Output matrix file")
+        .metavar ("output.txt");
+
+  parser.add_argument ("--output-separator")
+        .default_value (" ")
+        .help ("Output matrix file separator")
+        .metavar ("VALUE");
 
   try
     { parser.parse_args (argc, argv); }
@@ -61,15 +70,15 @@ return max;
 }
 
 template<std::ranges::input_range Range>
-  requires std::convertible_to<std::ranges::range_reference_t<Range>, std::string>
+  requires std::convertible_to<std::ranges::range_value_t<Range>, std::string>
 static inline std::generator<std::string> wrap_lines (Range range) noexcept
 {
 
   size_t bigger = 0;
 
-  for (const auto line: range)
+  for (auto&& line: range)
     {
-      bigger = std::max (bigger, line.length ());
+      bigger = std::max (bigger, (line = "| " + line + " |").length ());
       co_yield line;
     }
 
@@ -92,18 +101,35 @@ static inline void print_operation (_A_matrix&& A, _B_matrix&& B, const std::str
   std::string eqh (3, ' ');
   std::string oph (2 + op.length (), ' ');
 
-  auto tuples = std::views::zip (std::views::iota ((decltype (max)) 0, max),
-                                 wrap_lines (A.to_string_lines (biggest_number (A))),
-                                 wrap_lines (B.to_string_lines (biggest_number (B))),
-                                 wrap_lines (R.to_string_lines (biggest_number (R))));
+  auto&& tuples = std::views::zip (std::views::iota ((decltype (max)) 0, max),
+                                   wrap_lines (A.to_string_lines (biggest_number (A))),
+                                   wrap_lines (B.to_string_lines (biggest_number (B))),
+                                   wrap_lines (R.to_string_lines (biggest_number (R))));
 
-  for (const auto [ i, line_a, line_b, line_r ]: tuples)
+  for (const auto [ i, line_a, line_b, line_r ]: std::move (tuples))
     {
 
       std::cout << line_a << (i != opp ? oph : " " + op + " ")
                 << line_b << (i != opp ? eqh : std::string (" = "))
                 << line_r << '\n';
     }
+}
+
+template<matrix_type _A_matrix>
+static inline void write_matrix (ArgumentParser& parser, _A_matrix&& A)
+{
+
+  if (! parser.present ("--output"))
+    return;
+
+  auto file = parser.get<std::string> ("--output");
+  auto sep = parser.get<std::string> ("--output-separator");
+
+  if (auto stream = std::ofstream (file, std::ios::out); ! stream)
+
+    throw wrap_stacktrace<std::invalid_argument> ("cannot open file " + file);
+  else
+    return matrix_file::save_matrix<_A_matrix> (stream, std::forward<_A_matrix> (A), std::string_view (sep));
 }
 
 template<std::random_engine<unsigned long> RandomEngine>
@@ -319,6 +345,7 @@ static int work (ArgumentParser& parser)
     auto __value = ((__VA_ARGS__)); \
     auto __stop = std::chrono::steady_clock::now (); \
     std::cout << "took " << std::chrono::duration_cast<std::chrono::microseconds> (__stop - __start) << '\n'; \
+    write_matrix (parser, __value); \
     __value; \
   })
 
