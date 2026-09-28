@@ -386,9 +386,8 @@ static int work (ArgumentParser& parser)
           throw wrap_stacktrace<std::invalid_argument> ("expected square operand");
 
         auto n = A.get_cols ();
-        auto span = std::span<std::remove_cvref_t<decltype (*A.data ())>> (A.data (), A.get_cols () * A.get_rows ());
 
-        if (std::any_of (span.begin (), span.end (), [](double v) { return 0 != v && 1 != v; }) || A != (A ^ transpose))
+        if (std::any_of (A.begin (), A.end (), [](double v) { return 0 != v && 1 != v; }) || A != (A ^ transpose))
           throw wrap_stacktrace<std::invalid_argument> ("expected adjacency operand");
 
         if (B.get_cols () != B.get_rows () || 1 != B.get_cols ())
@@ -408,6 +407,27 @@ static int work (ArgumentParser& parser)
 
         std::cout << "differences = " << diff << std::endl;
         print_operation (R, G, "^", (matrix<unsigned> (R)) ^ 2);
+
+    } break;
+
+    case matrix_operations::details::operation_id::MARKOV_CHAIN: {
+
+        if (A.get_cols () != A.get_rows ())
+          throw wrap_stacktrace<std::invalid_argument> ("expected square operand");
+
+        if (A.get_rows () != B.get_rows ())
+          throw wrap_stacktrace<std::invalid_argument> ("invalid probability vector");
+
+        if (2 != B.get_cols ())
+          throw wrap_stacktrace<std::invalid_argument> ("invalid chain descriptor");
+
+        auto P = matrix<double> (B.get_rows (), 1, B ^ transpose);
+        auto v = B [0, 1];
+
+        if (v != std::floor (v))
+          throw wrap_stacktrace<std::invalid_argument> ("invalid round trip number");
+
+        print_operation (A, P, op, MEASURE ((A ^ v) * P));
 
     } break;
 
