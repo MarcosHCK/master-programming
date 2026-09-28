@@ -251,6 +251,14 @@ public:
     }
 };
 
+extern template class matrix<double>;
+extern template class matrix<float>;
+extern template class matrix<int>;
+extern template class matrix<long>;
+extern template class matrix<long double>;
+extern template class matrix<unsigned>;
+extern template class matrix<unsigned long>;
+
 template<typename T>
 concept matrix_type = requires (std::remove_cvref_t<T> value)
 {
