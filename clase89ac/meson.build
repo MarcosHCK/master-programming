@@ -26,4 +26,4 @@ executable ('solution',
   cpp_pch: 'pch/main.h',
   dependencies: [ argparse_dep, indicators_dep, __matrix_dep, __utils_dep ],
   include_directories: include_directories ('.'),
-  sources: [ 'main.cc', __operations_lookup_tgt ])
+  sources: [ 'main.cc', 'optimizepopularity.cc', 'optimizemarkov.cc', __operations_lookup_tgt ])

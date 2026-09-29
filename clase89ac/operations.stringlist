@@ -52,6 +52,6 @@ struct matrix_operations::details::id_lookup_result { }
 /, operation_id::DIVIDE
 /-, operation_id::LEFT_DIVIDE
 ^, operation_id::SCALAR_POWER
-P, operation_id::POPULARIZE
-M, operation_id::MARKOV_CHAIN
+OP, operation_id::POPULARIZE
+OM, operation_id::MARKOV_CHAIN
 %%

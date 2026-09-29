@@ -198,6 +198,12 @@ class genetic_optimization
         { return comparer (i, j); });
     }
 
+  static inline auto elapsed (auto start_tick) noexcept
+    {
+      auto now = std::chrono::steady_clock::now ();
+    return now - start_tick;
+    }
+
   template<std::invocable_r_v<bool, typename Container<T>::size_type, typename Container<T>::size_type> Comparer,
            typename result_type = typename Container<T>::size_type>
   inline typename Container<T>::size_type tournament (RandomEngine& rng, Comparer&& comparer)
@@ -229,9 +235,9 @@ public:
   template<std::invocable_r_v<Rank, const T&> FitnessRanker,
            std::invocable_r_v<T, RandomEngine&> UniformDistribution,
            std::invocable<int> ProgressReporter = progress_reporter>
-  inline T find_best (FitnessRanker&& ranker = fitness_ranker<T> (),
-                      UniformDistribution&& uniform_generator = uniform_distribution<T, RandomEngine> (),
-                      ProgressReporter&& progress_reporter = ::progress_reporter ())
+  inline auto find_best (FitnessRanker&& ranker = fitness_ranker<T> (),
+                         UniformDistribution&& uniform_generator = uniform_distribution<T, RandomEngine> (),
+                         ProgressReporter&& progress_reporter = ::progress_reporter ())
     {
 
       auto rng_seed = (std::random_device { }) ();
@@ -243,10 +249,10 @@ public:
   template<std::invocable_r_v<Rank, const T&> FitnessRanker,
            std::invocable_r_v<T, RandomEngine&> UniformDistribution,
            std::invocable<int> ProgressReporter = progress_reporter>
-  inline T find_best (typename RandomEngine::result_type rng_seed,
-                      FitnessRanker&& ranker = fitness_ranker<T> (),
-                      UniformDistribution&& uniform_generator = uniform_distribution<T, RandomEngine> (),
-                      ProgressReporter&& progress_reporter = ::progress_reporter ())
+  inline auto find_best (typename RandomEngine::result_type rng_seed,
+                         FitnessRanker&& ranker = fitness_ranker<T> (),
+                         UniformDistribution&& uniform_generator = uniform_distribution<T, RandomEngine> (),
+                         ProgressReporter&& progress_reporter = ::progress_reporter ())
     {
 
       RandomEngine rng (rng_seed);
@@ -258,13 +264,15 @@ public:
   template<std::invocable_r_v<Rank, const T&> FitnessRanker,
            std::invocable_r_v<T, RandomEngine&> UniformDistribution,
            std::invocable<int> ProgressReporter = progress_reporter>
-  inline T find_best (RandomEngine& rng,
-                      FitnessRanker&& ranker = fitness_ranker<T> (),
-                      UniformDistribution&& uniform_generator = uniform_distribution<T, RandomEngine> (),
-                      ProgressReporter&& progress_reporter = ::progress_reporter ())
+  inline auto find_best (RandomEngine& rng,
+                         FitnessRanker&& ranker = fitness_ranker<T> (),
+                         UniformDistribution&& uniform_generator = uniform_distribution<T, RandomEngine> (),
+                         ProgressReporter&& progress_reporter = ::progress_reporter ())
     {
 
       Container<T> population, swap_population;
+
+      auto start_tick = std::chrono::steady_clock::now ();
 
       auto elite_size = static_cast<Container<T>::size_type> (_config.elite_size);
       auto population_size = static_cast<Container<T>::size_type> (_config.population_size);
@@ -344,6 +352,6 @@ public:
                 }
             });
         }
-    return (best_order (order, comparer), std::move (population [order [0]]));
+    return std::make_pair ((best_order (order, comparer), std::move (population [order [0]])), elapsed (start_tick));
     }
 };
