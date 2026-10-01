@@ -1,0 +1,165 @@
+% Copyright 2026 MarcosHCK
+%
+\documentclass{article}[12pt,a4paper]
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{bookmark}
+\usepackage{hyperref}
+\usepackage{cleveref} % must load after hyperref
+\usepackage{fontawesome5}
+\usepackage{graphicx}
+\usepackage{inputenc}[utf8]
+\usepackage{indentfirst}
+\usepackage{minted}
+\usepackage{polyglossia}[spanish,english]
+\usepackage{biblatex}[style=apa] % must load after polyglossia
+\usepackage{csquotes} % must load after biblatex
+\usepackage{setspace}
+\usepackage{svg}
+\usepackage{xcolor}[dvipsnames]
+
+\setmainlanguage{spanish}
+\setotherlanguage{english}
+
+\setstretch{1.5}
+
+\newcommand{\bashps}{\textasciitilde\#\,}
+
+\definecolor{Aquamarine}{rgb}{0.498, 1, 0.83}
+\definecolor{DarkAquamarine}{rgb}{0.18, 0.55, 0.34}
+\definecolor{YellowOrange}{rgb}{1, 0.7, 0}
+\newcommand\myshade{85}
+\colorlet{mycitecolor}{YellowOrange}
+\colorlet{mylinkcolor}{violet}
+\colorlet{myurlcolor}{DarkAquamarine}
+
+\hypersetup {
+    colorlinks = true,
+    citecolor  = mycitecolor!\myshade!black,
+    linkcolor  = mylinkcolor!\myshade!black,
+    urlcolor   = myurlcolor!\myshade!black,
+  }
+
+\begin{document}
+
+\begin{titlepage}
+
+  \centering
+  {\huge\bfseries Reporte (semana 4)\par}
+  {\Large Autor: \itshape Marcos Antonio Pérez Lorenzo\par}
+\end{titlepage}
+
+\pagebreak
+\include{arquitectures.tex}
+\include{instructions.tex}
+
+\section{Programas}
+
+Todos los programas se encuentran alojados en este \href{https://github.com/MarcosHCK/master-programming/}{repositorio \faGithubSquare}
+
+\subsection{Programa 1}
+
+El programa \textbf{clase89ac} reúne operaciones de matrices y dos optimizaciones de grafos, a partir de una matriz de entrada y un descriptor de operación.
+
+\subsubsection{Objetivos}
+
+Los objetivos del programa son:
+
+\begin{enumerate}
+  \item Elevar una matriz cuadrada a una potencia escalar entera no negativa, utilizando exponenciación binaria.
+  \item Optimizar la matriz de adyacencia de un grafo no dirigido para que un nodo elegido tenga un grado exactamente una conexión mayor que el máximo grado de los demás nodos, minimizando las conexiones añadidas o eliminadas.
+  \item Optimizar la matriz de adyacencia de un grafo dirigido para aumentar la probabilidad de llegar a un nodo elegido desde un vector de probabilidades iniciales, procurando que dicha probabilidad supere a la de los demás nodos y minimizando los cambios en las conexiones.
+\end{enumerate}
+
+\subsubsection{Tecnicismos}
+
+Arquitectura basada en \ref{sec:genarc:cplusplus}.
+
+El archivo de entrada contiene una matriz por operación y una línea de control con el operador. El operador \mintinline{cpp}{^} recibe como segundo operando una matriz escalar de tamaño \(1\times1\); \mintinline{cpp}{OP} recibe el índice del nodo elegido y \mintinline{cpp}{OM} recibe una matriz de dos columnas: la primera contiene las probabilidades iniciales y la primera entrada de la segunda columna indica el índice, comenzando desde cero, del nodo objetivo. Los ejemplos de ambas optimizaciones están incluidos como comentarios en \mintinline{bash}{clase89ac/example.txt}.
+
+\subsubsection{Código relevante}
+
+El despacho de operaciones de \mintinline{cpp}{main.cc} conecta el operador de potencia y las dos rutinas de optimización con sus respectivas funciones:
+
+\begin{minted}{cpp}
+case operation_id::SCALAR_POWER:
+  if (B.get_cols () != B.get_rows () || 1 != B.get_cols ())
+    throw wrap_stacktrace<std::invalid_argument> ("expected scalar operand");
+  print_operation (A, B, op, MEASURE (A ^ B [0, 0]));
+  break;
+
+case operation_id::POPULARIZE: {
+  auto [ R, ticks, diff ] = optimize_popularity (A, B);
+  MEASURED (ticks, R);
+  std::cout << "differences = " << diff << std::endl;
+} break;
+
+case operation_id::MARKOV_CHAIN: {
+  auto [ R, ticks, diff ] = optimize_markov (A, B);
+  MEASURED (ticks, R);
+  auto C = to_probabilities (R);
+  auto P = matrix<double> (B.get_rows (), 1, B ^ transpose);
+  std::cout << "differences = " << diff << std::endl;
+  print_operation (R, P, "*", C * P);
+} break;
+\end{minted}
+
+La potencia usa el algoritmo de exponenciación binaria: se acumulan las potencias correspondientes a los bits encendidos del exponente y se eleva al cuadrado la matriz base en cada iteración.
+
+\begin{minted}{cpp}
+auto M = matrix<R>::identity (A.get_cols ());
+auto s = (size_t) scalar;
+
+for (matrix<R> B = A; s > 0; B = B * B, s >>= 1)
+  if (1 == (s & 1))
+    M = M * B;
+\end{minted}
+
+Para la popularidad, el programa calcula \(C^2\): como \(C\) es una matriz de adyacencia simétrica, cada elemento diagonal de \(C^2\) es el grado de un nodo. La aptitud penaliza primero no superar al mejor de los otros nodos y, entre soluciones que cumplen la condición, favorece una diferencia de un grado; luego utiliza \mintinline{cpp}{diff} para preferir menos cambios respecto de la matriz original.
+
+\begin{minted}{cpp}
+auto M = ((matrix<unsigned>) C) ^ 2;
+auto [ own, best, diff ] = rank (C);
+return (own > best ? own - best : 2 + (best - own)) * fact + diff;
+\end{minted}
+
+Para la cadena de Markov, \mintinline{cpp}{to_probabilities} obtiene la matriz de transición ponderando las entradas de cada columna de la matriz de adyacencia por el inverso de la cantidad de conexiones presentes en esa columna. La aptitud busca que la probabilidad del nodo objetivo supere a la mayor probabilidad de los demás y añade el número de cambios a la puntuación. En particular, no maximiza de forma independiente la probabilidad absoluta del objetivo: entre candidatos que lo sitúan por encima de los demás, su puntuación favorece un margen positivo pequeño y menos cambios.
+
+\begin{minted}{cpp}
+auto M = to_probabilities (C) * P;
+auto [ own, best, diff ] = rank (C);
+return (own > best ? own - best : 2 + (best - own)) * fact + diff;
+\end{minted}
+
+\subsubsection{Ejecución}
+
+Ver sección \ref{src:genericinstrc:cplusplus}.
+
+\subsubsection{Resultados esperados}
+
+La ejecución con el ejemplo activo \mintinline{cpp}{:OM} presenta la matriz optimizada, la cantidad de cambios y el producto de la matriz de transición por el vector inicial. Una ejecución real produjo el siguiente resultado (el tiempo y la solución pueden variar entre ejecuciones, pues la búsqueda genética utiliza una semilla aleatoria):
+
+\begin{verbatim}
+took 1886392us
+| 0 0 1 1 0 0 0 |    | 0.2   6 |   | 0 0 1 1 0 0 0 |
+| 1 0 0 1 0 0 0 |    | 0.2   0 |   | 1 1 0 1 0 0 0 |
+| 0 1 0 0 0 0 0 |    | 0.2   0 |   | 0 1 0 0 0 0 0 |
+| 0 1 1 0 0 0 0 | OM | 0.2   0 | = | 0 1 1 0 0 0 0 |
+| 0 0 0 0 0 0 0 |    | 0.2   0 |   | 0 0 0 0 0 0 0 |
+| 0 0 0 0 0 0 0 |    |   0   0 |   | 0 0 0 0 0 0 0 |
+| 0 0 0 0 0 0 0 |    |   0   0 |   | 0 0 1 1 1 0 0 |
+differences = 4
+| 0 0 1 1 0 0 0 |   | 0.2 |   | 0.13333333333333333 |
+| 1 1 0 1 0 0 0 |   | 0.2 |   |  0.3333333333333333 |
+| 0 1 0 0 0 0 0 |   | 0.2 |   | 0.06666666666666667 |
+| 0 1 1 0 0 0 0 | * | 0.2 | = | 0.13333333333333333 |
+| 0 0 0 0 0 0 0 |   | 0.2 |   |                   0 |
+| 0 0 0 0 0 0 0 |   |   0 |   |                   0 |
+| 0 0 1 1 1 0 0 |   |   0 |   | 0.33333333333333337 |
+\end{verbatim}
+
+\subsubsection{Liga de \textbf{Github}}
+
+\href{https://github.com/MarcosHCK/master-programming/tree/master/clase89ac}{Aquí \faGithubSquare}
+\end{document}
