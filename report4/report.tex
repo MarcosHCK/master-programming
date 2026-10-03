@@ -162,4 +162,49 @@ differences = 4
 \subsubsection{Liga de \textbf{Github}}
 
 \href{https://github.com/MarcosHCK/master-programming/tree/master/clase89ac}{Aquí \faGithubSquare}
+
+\subsection{Programa 2}
+
+El programa \textbf{clasef} genera tablas rectangulares de valores aleatorios y las escribe en la salida estándar o en un archivo.
+
+\subsubsection{Objetivos}
+
+El objetivo del programa es generar una tabla con la cantidad de filas y columnas indicada por el usuario, con valor reales entre un intervalo configurable o con valores binarios, y un separador seleccionable (por defecto: un espacio)
+
+\subsubsection{Tecnicismos}
+
+Arquitectura basada en \ref{sec:genarc:python}.
+
+\subsubsection{Código relevante}
+
+La función \mintinline{python3}{write} recorre las filas y columnas, genera cada valor y escribe cada fila seguida de un salto de línea. El generador se selecciona según la opción binaria:
+
+\begin{minted}{python3}
+gen = ((lambda: randint (0, 1)) if args.binary else
+       (lambda: uniform (min_, max_)))
+
+if '-' == (output := args.output):
+  import sys
+  write (sys.stdout, n, m, gen, args.separator)
+else:
+  with Path (output).open ('wt') as stream:
+    write (stream, n, m, gen, args.separator)
+\end{minted}
+
+\subsubsection{Ejecución}
+
+Ver sección \ref{src:genericinstrc:python}.
+
+\subsubsection{Resultados esperados}
+
+Por ejemplo, \mintinline{bash}{python3 clasef -n 2 -m 3 -b -s ,} genera dos filas de tres valores binarios, separados por comas. Debido a que los valores se generan aleatoriamente, el resultado concreto puede variar:
+
+\begin{verbatim}
+0,1,1
+1,0,1
+\end{verbatim}
+
+\subsubsection{Liga de \textbf{Github}}
+
+\href{https://github.com/MarcosHCK/master-programming/tree/master/clasef}{Aquí \faGithubSquare}
 \end{document}
