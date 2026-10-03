@@ -12,6 +12,7 @@
 #include <chrono>
 #include <fstream>
 #include <iostream>
+#include <numeric>
 using namespace argparse;
 using namespace matrix_operations;
 using namespace utility;
@@ -186,7 +187,7 @@ static int work (ArgumentParser& parser)
         print_operation (A, B, op, MEASURE (A ^ B [0, 0]));
       break;
 
-    case matrix_operations::details::operation_id::POPULARIZE: {
+    case matrix_operations::details::operation_id::POPULARITY_OPTIMIZE: {
 
       auto [ R, ticks, diff ] = optimize_popularity (A, B);
       MEASURED (ticks, R);
@@ -198,6 +199,26 @@ static int work (ArgumentParser& parser)
     } break;
 
     case matrix_operations::details::operation_id::MARKOV_CHAIN: {
+
+      if (A.get_cols () != A.get_rows ())
+        throw wrap_stacktrace<std::invalid_argument> ("expected square matrix");
+
+      if (std::any_of (A.begin (), A.end (), [](double v) { return 0 != v && 1 != v; }))
+        throw wrap_stacktrace<std::invalid_argument> ("expected adjacency operand");
+
+      if (1 != B.get_cols () || B.get_rows () != A.get_rows ())
+        throw wrap_stacktrace<std::invalid_argument> ("invalid entry probability vector");
+
+      if (1.0 - std::accumulate (B.begin (), B.end (), 0.0) > 0.0001)
+        throw wrap_stacktrace<std::invalid_argument> ("invalid entry probability vector");
+
+      auto C = to_probabilities (A);
+
+      print_operation (A, B, op, MEASURE (C * B));
+      break;
+    }
+
+    case matrix_operations::details::operation_id::MARKOV_CHAIN_OPTIMIZE: {
 
       auto [ R, ticks, diff ] = optimize_markov (A, B);
       MEASURED (ticks, R);

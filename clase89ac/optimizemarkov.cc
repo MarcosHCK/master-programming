@@ -79,19 +79,17 @@ struct __optimize_markov::fitness_ranker_
 
   const matrix<bool>& A;
   const matrix<double>& P;
-  unsigned n, v, fact;
+  unsigned n, v;
 
   inline fitness_ranker_ (const matrix<bool>& _A, const matrix<double>& _P, unsigned _n, unsigned _v) noexcept:
       A (_A), P (_P), n (_n), v (_v)
-    {
-      fact = n * n;
-    }
+    {}
 
   inline double operator() (const matrix<bool>& C)
     {
 
       auto [ own, best, diff ] = rank (C);
-    return (own > best ? own - best : 2 + (best - own)) * fact + diff;
+    return (own > best ? own - best : 2 + (best - own)) + (double) diff;
     }
 
   inline std::tuple<double, double, unsigned> rank (const matrix<bool>& C) const

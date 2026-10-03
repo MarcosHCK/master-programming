@@ -21,8 +21,9 @@ enum class matrix_operations::details::operation_id: int
   DIVIDE,
   LEFT_DIVIDE,
   SCALAR_POWER,
-  POPULARIZE,
+  POPULARITY_OPTIMIZE,
   MARKOV_CHAIN,
+  MARKOV_CHAIN_OPTIMIZE,
 };
 
 struct matrix_operations::details::id_lookup_result
@@ -52,6 +53,7 @@ struct matrix_operations::details::id_lookup_result { }
 /, operation_id::DIVIDE
 /-, operation_id::LEFT_DIVIDE
 ^, operation_id::SCALAR_POWER
-OP, operation_id::POPULARIZE
-OM, operation_id::MARKOV_CHAIN
+OP, operation_id::POPULARITY_OPTIMIZE
+M, operation_id::MARKOV_CHAIN
+OM, operation_id::MARKOV_CHAIN_OPTIMIZE
 %%
