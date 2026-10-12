@@ -89,7 +89,7 @@ struct __optimize_markov::fitness_ranker_
     {
 
       auto [ own, best, diff ] = rank (C);
-    return (own > best ? own - best : 2 + (best - own)) + (double) diff;
+    return (own > best ? own - best : 2 + (best - own)) * C.get_cols () + (double) diff;
     }
 
   inline std::tuple<double, double, unsigned> rank (const matrix<bool>& C) const

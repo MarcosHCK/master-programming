@@ -48,15 +48,20 @@ public:
       _values.resize (get_cols () * get_rows ());
     }
 
+  template<typename U = T,
+           typename = std::enable_if_t<requires (std::vector<U> d) { d.data (); }>>
   inline constexpr T* data () noexcept { return _values.data (); }
+
+  template<typename U = T,
+           typename = std::enable_if_t<requires (std::vector<U> d) { d.data (); }>>
   inline constexpr const T* data () const noexcept { return _values.data (); }
 
-  inline decltype (std::declval<std::vector<T>> () [0]) operator[] (unsigned r, unsigned c)
+  inline decltype (std::declval<const std::vector<T>> () [0]) operator[] (unsigned r, unsigned c) const
     {
       return _values [c + r * get_cols ()];
     }
 
-  inline decltype (std::declval<const std::vector<T>> () [0]) operator[] (unsigned r, unsigned c) const
+  inline decltype (std::declval<std::vector<T>> () [0]) operator[] (unsigned r, unsigned c)
     {
       return _values [c + r * get_cols ()];
     }
@@ -72,13 +77,13 @@ public:
     return matrix<O> (get_rows (), get_cols (), range_cast<O> (_values));
     }
 
-  inline T& at (std::pair<unsigned, unsigned> index)
+  inline auto at (std::pair<unsigned, unsigned> index)
     {
       auto [ r, c ] = (check_bounds (index), index);
     return operator[] (r, c);
     }
 
-  inline T at (std::pair<unsigned, unsigned> index) const
+  inline auto at (std::pair<unsigned, unsigned> index) const
     {
       auto [ r, c ] = (check_bounds (index), index);
     return operator[] (r, c);
@@ -251,13 +256,11 @@ public:
     }
 };
 
+extern template class matrix<bool>;
 extern template class matrix<double>;
 extern template class matrix<float>;
 extern template class matrix<int>;
-extern template class matrix<long>;
-extern template class matrix<long double>;
 extern template class matrix<unsigned>;
-extern template class matrix<unsigned long>;
 
 template<typename T>
 concept matrix_type = requires (std::remove_cvref_t<T> value)
