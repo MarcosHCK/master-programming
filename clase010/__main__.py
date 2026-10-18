@@ -5,8 +5,9 @@ from clase010.Perceptron import PerceptronClassifier
 from clase010.sigmoid import *
 from functools import reduce
 from itertools import chain, batched
+from pathlib import Path
 from typing import Callable, Iterable
-import math
+import json, math
 
 def nand (x: int, y: int):
   return not int.__and__ (x, y)
@@ -40,14 +41,26 @@ if __name__ == '__main__':
 
   parser = ArgumentParser ()
 
-  parser.add_argument ('--epochs', default = 3000, type = int)
-  parser.add_argument ('-o', '--output', default = None, type = str)
+  parser.add_argument ('--epochs', default = 5000, type = int)
+  parser.add_argument ('-h', '--header', default = None, type = str)
   parser.add_argument ('--learning-rate', default = 0.3, type = float)
   parser.add_argument ('-l', '--logic', choices = logics.keys (), default = 'and', type = str)
   parser.add_argument ('-n', '--inputs', default = 2, type = int)
   parser.add_argument ('--sufficient', default = -math.inf, type = float)
+  parser.add_argument ('--patience', default = 10, type = int,
+                       help = 'epochs without enough loss improvement before stopping; 0 disables')
+  parser.add_argument ('--min-delta', default = 1e-6, type = float,
+                       help = 'minimum loss decrease counted as an improvement')
+  parser.add_argument ('--errors-output', default = None, type = Path,
+                       help = 'write per-epoch training errors as a JSON array')
 
   args = parser.parse_args ()
+
+  if args.patience < 0:
+    parser.error ('--patience must be zero or greater')
+
+  if not math.isfinite (args.min_delta) or args.min_delta < 0.0:
+    parser.error ('--min-delta must be finite and non-negative')
 
   X = list (( list (( float (i) for i in p )) for p in binary_pairs (args.inputs) ))
   Y = logics [args.logic] (X)
@@ -56,7 +69,15 @@ if __name__ == '__main__':
     activation = sigmoid, derivative = sigmoid_derivative_from_output)
   print (f'Training on {str (args.logic).upper ()}...\n')
 
-  net.fit (X, Y, epochs = args.epochs, sufficient = args.sufficient)
+  errors = net.fit (X, Y, epochs = args.epochs, sufficient = args.sufficient,
+    patience = None if 0 == args.patience else args.patience,
+    min_delta = args.min_delta)
+
+  if None != args.errors_output:
+
+    with args.errors_output.open ('wt', encoding = 'utf-8') as stream:
+      json.dump (errors, stream, indent = 2)
+      stream.write ('\n')
 
   line1 = ' '.join ( f'x{i + 1}' for i in range (len (X [0])) )
   line2 = '-' * len (line1)
@@ -76,16 +97,14 @@ if __name__ == '__main__':
   print (f'  b = {net.b: .4f}')
   print ('  w = [' + ','.join (( f'{w: .4f}' for w in net.w )) + ' ]')
 
-  if None != (file := args.output):
-
-    from pathlib import Path
+  if None != (header := args.header):
 
     def first_then_repeat (first: str, repeat: str):
 
       yield first
       while True: yield repeat
 
-    with Path (file).open ('wt') as stream:
+    with Path (header).open ('wt') as stream:
 
       decl_end = '};\n'
       decl_start = 'static const float weights [] = {\n'

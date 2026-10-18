@@ -49,22 +49,103 @@ class PerceptronClassifier:
     return 0.5 * (a - y) ** 2
 
   # ---------------- training loop ----------------
-  def fit (self, X: list[list[float]], Y: list[float], epochs: int = 10000, sufficient: float = -math.inf, verbose: bool = True):
+  def fit (self, X: list[list[float]], Y: list[float], epochs: int = 10000,
+           sufficient: float = -math.inf, verbose: bool = True, *,
+           patience: int | None = 10, min_delta: float = 1e-6,
+           validation_data: tuple[list[list[float]], list[float]] | None = None) -> list[float]:
 
-    last_avg = math.inf
+    """Train with early stopping and restore the best observed parameters.
+
+    If validation_data is provided, its mean squared loss controls stopping;
+    otherwise training loss is monitored. An improvement must exceed
+    min_delta to reset patience. The legacy sufficient argument is accepted
+    as an alias for min_delta when explicitly set. Returns the mean training
+    loss after each completed epoch, including epochs beyond the best one
+    before early stopping.
+    """
+
+    if not X or len (X) != len (Y):
+      raise ValueError ('X and Y must contain the same non-zero number of examples')
+
+    if epochs <= 0:
+      raise ValueError ('epochs must be greater than zero')
+
+    if patience is not None and patience <= 0:
+      raise ValueError ('patience must be greater than zero or None')
+
+    if sufficient != -math.inf:
+      min_delta = sufficient
+
+    if not math.isfinite (min_delta) or min_delta < 0.0:
+      raise ValueError ('min_delta must be a finite number greater than or equal to zero')
+
+    if validation_data is None:
+      monitor_X, monitor_Y = X, Y
+      monitor_name = 'training'
+    else:
+      monitor_X, monitor_Y = validation_data
+      if not monitor_X or len (monitor_X) != len (monitor_Y):
+        raise ValueError ('validation inputs and targets must have the same non-zero number of examples')
+      monitor_name = 'validation'
+
+    def average_loss (inputs: list[list[float]], targets: list[float]):
+
+      return sum (
+        0.5 * (self.predict_proba (x) - y) ** 2
+        for x, y in zip (inputs, targets)
+      ) / len (inputs)
+
+    best_loss = math.inf
+    best_epoch = 0
+    best_b = self.b
+    best_w = self.w.copy ()
+    epochs_without_improvement = 0
+    errors: list[float] = []
+
+    self.stopped_early = False
+    self.best_epoch = 0
+    self.epochs_trained = 0
+    self.best_loss = math.inf
 
     for epoch in range (epochs):
 
-      total_loss = sum ( self.train_one (x, y) for x, y in zip (X, Y) )
-      avg_loss = total_loss / len(X)
+      for x, y in zip (X, Y):
+        self.train_one (x, y)
 
-      if verbose and (epoch % 2000 == 0 or epoch == epochs - 1):
-        print(f'epoch {epoch:6d} avg loss = {avg_loss:.6f}')
+      train_loss = average_loss (X, Y)
+      errors.append (train_loss)
+      monitored_loss = train_loss if validation_data is None else average_loss (monitor_X, monitor_Y)
 
-      if abs (last_avg - avg_loss) < sufficient:
-        print(f'epoch {epoch:6d} avg loss = {avg_loss:.6f}')
+      if monitored_loss < best_loss - min_delta:
+        best_loss = monitored_loss
+        best_epoch = epoch + 1
+        best_b = self.b
+        best_w = self.w.copy ()
+        epochs_without_improvement = 0
+      else:
+        epochs_without_improvement += 1
+
+      stop = patience is not None and epochs_without_improvement >= patience
+      report = verbose and (epoch % 2000 == 0 or epoch == epochs - 1 or stop)
+
+      if report:
+        line = f'epoch {epoch + 1:6d} avg loss = {train_loss:.6f}'
+        if validation_data is not None:
+          line += f' validation loss = {monitored_loss:.6f}'
+        print (line)
+
+      self.epochs_trained = epoch + 1
+
+      if stop:
+        self.stopped_early = True
+        if verbose:
+          print (f'early stopping: no {monitor_name} loss improvement for {patience} epochs '
+                 f'(best at epoch {best_epoch})')
         break
 
-      last_avg = avg_loss
+    self.b = best_b
+    self.w = best_w
+    self.best_epoch = best_epoch
+    self.best_loss = best_loss
 
-    return self
+    return errors
