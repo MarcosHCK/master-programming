@@ -1,0 +1,295 @@
+% Copyright 2026 MarcosHCK
+%
+\documentclass{article}[12pt,a4paper]
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{bookmark}
+\usepackage{hyperref}
+\usepackage{cleveref} % must load after hyperref
+\usepackage{fontawesome5}
+\usepackage{graphicx}
+\usepackage{inputenc}[utf8]
+\usepackage{indentfirst}
+\usepackage{minted}
+\usepackage{polyglossia}[spanish,english]
+\usepackage{biblatex}[style=apa] % must load after polyglossia
+\usepackage{csquotes} % must load after biblatex
+\usepackage{setspace}
+\usepackage{svg}
+\usepackage{xcolor}[dvipsnames]
+
+\setmainlanguage{spanish}
+\setotherlanguage{english}
+
+\setstretch{1.5}
+
+\newcommand{\bashps}{\textasciitilde\#\,}
+
+\definecolor{Aquamarine}{rgb}{0.498, 1, 0.83}
+\definecolor{DarkAquamarine}{rgb}{0.18, 0.55, 0.34}
+\definecolor{YellowOrange}{rgb}{1, 0.7, 0}
+\newcommand\myshade{85}
+\colorlet{mycitecolor}{YellowOrange}
+\colorlet{mylinkcolor}{violet}
+\colorlet{myurlcolor}{DarkAquamarine}
+
+\hypersetup {
+    colorlinks = true,
+    citecolor  = mycitecolor!\myshade!black,
+    linkcolor  = mylinkcolor!\myshade!black,
+    urlcolor   = myurlcolor!\myshade!black,
+  }
+
+\begin{document}
+
+\begin{titlepage}
+
+  \centering
+  {\huge\bfseries Reporte (semana 5 y 6)\par}
+  {\Large Autor: \itshape Marcos Antonio Pérez Lorenzo\par}
+\end{titlepage}
+
+\pagebreak
+\input{../reports/arquitectures.tex}
+\input{../reports/instructions.tex}
+
+\section{Programas}
+
+Todos los programas se encuentran alojados en este
+\href{https://github.com/MarcosHCK/master-programming/}{repositorio \faGithubSquare}.
+En esta entrega se presentan dos programas relacionados: el primero entrena un
+perceptrón con tablas de verdad generadas por el programa; el segundo reutiliza
+el mismo clasificador para aprender a partir de un archivo CSV.
+
+\subsection{Programa 1: \texttt{clase010}}
+
+\subsubsection{Objetivos}
+
+El programa \textbf{clase010} permite entrenar y consultar un perceptrón para
+una función lógica booleana. Sus objetivos son:
+
+\begin{enumerate}
+  \item Generar automáticamente todas las combinaciones binarias para la
+    cantidad de entradas seleccionada.
+  \item Construir los resultados esperados de las funciones \texttt{and},
+    \texttt{or}, \texttt{nand}, \texttt{nor} y \texttt{xor}.
+  \item Ajustar un perceptrón de una neurona y presentar la probabilidad y la
+    clasificación obtenidas para cada combinación.
+  \item Permitir la exportación opcional de los errores de entrenamiento a
+    JSON y de los pesos aprendidos a un encabezado C.
+\end{enumerate}
+
+\subsubsection{Tecnicismos}
+
+Arquitectura basada en \ref{sec:genarc:python}. El punto de entrada está en
+\path{clase010/__main__.py}; el modelo reutilizable está definido en
+\path{clase010/Perceptron.py} y las funciones de activación en
+\path{clase010/sigmoid.py}. No requiere dependencias externas a la biblioteca
+estándar de Python.
+
+La función \mintinline{python3}{binary_pairs} genera \(2^n\) vectores binarios
+de longitud \(n\). El diccionario \mintinline{python3}{logics} aplica la
+operación seleccionada a cada vector para producir los objetivos de
+entrenamiento. El clasificador calcula una suma ponderada más un sesgo y aplica
+la función sigmoide:
+
+\[
+  p = \sigma\!\left(b + \sum_{i=1}^{n} w_i x_i\right),
+  \qquad
+  \sigma(z) = \frac{1}{1 + e^{-z}}.
+\]
+
+El entrenamiento actualiza los pesos y el sesgo con descenso de gradiente y
+pérdida cuadrática. La parada anticipada cuenta las épocas sin una mejora de
+pérdida mayor que \texttt{min\_delta}; cuando transcurren las épocas indicadas
+por \texttt{patience}, recupera los parámetros del mejor punto observado. En
+esta interfaz se supervisa la pérdida de entrenamiento. El argumento
+\texttt{--patience 0} desactiva la parada anticipada.
+
+\subsubsection{Código relevante}
+
+La generación del conjunto de entrenamiento y la invocación del clasificador
+son independientes del número de entradas:
+
+\begin{minted}{python3}
+inputs = [[float (value) for value in row]
+          for row in binary_pairs (args.inputs)]
+targets = logics [args.logic] (inputs)
+
+net = PerceptronClassifier (
+  n_inputs = len (inputs [0]),
+  learning_rate = args.learning_rate,
+  activation = sigmoid,
+  derivative = sigmoid_derivative_from_output)
+
+errors = net.fit (
+  inputs,
+  targets,
+  epochs = args.epochs,
+  patience = None if 0 == args.patience else args.patience,
+  min_delta = args.min_delta)
+\end{minted}
+
+El método \mintinline{python3}{fit} devuelve una lista con la pérdida media de
+cada época ejecutada. La opción \mintinline{bash}{--errors-output} escribe esta
+lista como un arreglo JSON. La opción \mintinline{bash}{-h} o
+\mintinline{bash}{--header} guarda en un encabezado C el arreglo
+\mintinline{cpp}{weights}, con el sesgo en la primera posición y luego los
+pesos de las entradas.
+
+\subsubsection{Ejecución}
+
+Ver sección \ref{src:genericinstrc:python}. Desde la raíz del repositorio, por
+ejemplo:
+
+\begin{minted}{bash}
+python -m clase010 --logic and --inputs 2 --epochs 5000 \\
+  --patience 10 --errors-output errores.json \\
+  --header modelo.h
+\end{minted}
+
+La ayuda del programa presenta la lista completa de opciones y sus descripciones.
+
+\subsubsection{Resultados esperados}
+
+La ejecución presenta la pérdida durante el entrenamiento, una tabla con las
+entradas, el objetivo, la probabilidad predicha y la clase binaria, y finalmente
+el sesgo y los pesos. Un ejemplo de la tabla para la función AND tiene esta
+estructura:
+
+\begin{verbatim}
+ x1 x2 | target |   prob | pred
+ ------+--------+--------+------
+  0  0 |      0 | 0.08   |    0
+  0  1 |      0 | 0.29   |    0
+  1  0 |      0 | 0.29   |    0
+  1  1 |      1 | 0.65   |    1
+\end{verbatim}
+
+Los valores numéricos dependen de la inicialización aleatoria y de las opciones
+de entrenamiento. Una neurona lineal con sigmoide puede representar AND, OR,
+NAND y NOR; XOR no es linealmente separable, por lo que el clasificador de una
+neurona no puede ajustarse perfectamente a esa tabla.
+
+\subsubsection{Liga de \textbf{Github}}
+
+\href{https://github.com/MarcosHCK/master-programming/tree/master/clase010}{Aquí \faGithubSquare}
+
+\subsection{Programa 2: \texttt{clase011}}
+
+\subsubsection{Objetivos}
+
+El programa \textbf{clase011} aplica el mismo clasificador a datos externos,
+permitiendo que cada ejemplo tenga cualquier cantidad positiva de entradas
+numéricas. Sus objetivos son:
+
+\begin{enumerate}
+  \item Leer filas de un CSV donde las primeras \(n-1\) columnas representan
+    las entradas y la última columna contiene la clase.
+  \item Detectar las dos etiquetas presentes en los datos y asociarlas de forma
+    determinista con los objetivos \(0\) y \(1\).
+  \item Normalizar las entradas por columna, entrenar el perceptrón y mostrar
+    las predicciones y la exactitud sobre los ejemplos suministrados.
+  \item Permitir exportar los errores a JSON y los parámetros del modelo y de
+    normalización a un encabezado C.
+\end{enumerate}
+
+\subsubsection{Tecnicismos}
+
+Arquitectura basada en \ref{sec:genarc:python}. El cargador usa el módulo
+\mintinline{python3}{csv} de la biblioteca estándar. Cada fila debe tener el
+mismo ancho y al menos dos columnas: una o más entradas finitas que puedan
+convertirse a números, y una etiqueta de texto no vacía. Se requiere que el
+conjunto contenga exactamente dos etiquetas distintas; el programa las ordena
+alfabéticamente y muestra cuál se codifica como cero y cuál como uno.
+
+Cada entrada \(x_i\) se centra y escala usando la media \(\mu_i\) y la
+desviación estándar poblacional \(s_i\) calculadas sobre los ejemplos:
+
+\[
+  x_i' = \frac{x_i - \mu_i}{s_i}.
+\]
+
+Si una columna es constante, se usa escala uno para evitar la división entre
+cero. El número de pesos se determina con el ancho leído del CSV. Al exportar
+el modelo se escriben \mintinline{cpp}{weights} (sesgo primero),
+\mintinline{cpp}{means} y \mintinline{cpp}{scales}; para evaluar nuevas entradas
+se deben normalizar con las medias y escalas exportadas antes de aplicar la
+suma ponderada y la sigmoide. En la interfaz de consola, la pérdida observada
+para la parada anticipada es la pérdida de entrenamiento.
+
+\subsubsection{Código relevante}
+
+El lector separa la última columna como etiqueta y convierte todas las columnas
+anteriores en el vector de entrada:
+
+\begin{minted}{python3}
+inputs = [float (field) for field in fields [:-1]]
+label = fields [-1]
+
+rows.append ((line, inputs, label))
+\end{minted}
+
+Una vez cargados los ejemplos, la cantidad de entradas se obtiene de la primera
+fila y se usa para inicializar el modelo:
+
+\begin{minted}{python3}
+inputs = [row [1] for row in rows]
+targets = [float (labels.index (row [2])) for row in rows]
+normalized, means, scales = normalize_inputs (inputs)
+
+net = PerceptronClassifier (
+  n_inputs = len (inputs [0]),
+  learning_rate = args.learning_rate,
+  seed = args.seed,
+  activation = sigmoid,
+  derivative = sigmoid_derivative_from_output)
+\end{minted}
+
+La opción \mintinline{bash}{--csv-header} controla la fila de encabezado del
+CSV (detección automática por omisión, o los valores \texttt{yes} y
+\texttt{no}). La opción \mintinline{bash}{-h} o
+\mintinline{bash}{--header} es distinta: recibe la ruta de salida del encabezado
+C. El archivo exportado contiene las ponderaciones y también los datos
+necesarios para reproducir la normalización.
+
+\subsubsection{Ejecución}
+
+Ver sección \ref{src:genericinstrc:python}. Un ejemplo de archivo de entrada
+con dos entradas y una etiqueta es:
+
+\begin{minted}{text}
+edad,puntaje,grupo
+18,20,joven
+20,25,joven
+60,80,adulto
+65,90,adulto
+\end{minted}
+
+Desde la raíz del repositorio se puede entrenar y exportar los resultados con:
+
+\begin{minted}{bash}
+python -m clase011 clases.csv --epochs 5000 --patience 10 \\
+  --errors-output errores.json --header modelo.h
+\end{minted}
+
+La opción \mintinline{bash}{--help} muestra el resto de las opciones,
+como \mintinline{bash}{--csv-header}, que selecciona el modo de lectura del
+encabezado CSV, y \mintinline{bash}{--seed} y \mintinline{bash}{--min-delta},
+que controlan la semilla y la mejora mínima de pérdida, respectivamente.
+
+\subsubsection{Resultados esperados}
+
+El programa informa la correspondencia entre etiquetas y objetivos, muestra la
+pérdida de entrenamiento y presenta una tabla con cada vector, la etiqueta
+real, la probabilidad, la etiqueta predicha y si la predicción fue correcta.
+En el ejemplo, la salida identifica \texttt{adulto} como clase cero y
+\texttt{joven} como clase uno; la exactitud final se calcula sobre las mismas
+filas utilizadas para entrenar, no sobre un conjunto de prueba separado.
+
+\subsubsection{Liga de \textbf{Github}}
+
+\href{https://github.com/MarcosHCK/master-programming/tree/master/clase011}{Aquí \faGithubSquare}
+
+\end{document}
