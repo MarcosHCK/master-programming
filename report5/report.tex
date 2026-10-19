@@ -58,9 +58,11 @@
 
 Todos los programas se encuentran alojados en este
 \href{https://github.com/MarcosHCK/master-programming/}{repositorio \faGithubSquare}.
-En esta entrega se presentan dos programas relacionados: el primero entrena un
-perceptrón con tablas de verdad generadas por el programa; el segundo reutiliza
-el mismo clasificador para aprender a partir de un archivo CSV.
+En esta entrega se presentan dos entrenadores de perceptrones y cuatro sketches
+de inferencia para Arduino UNO. Los programas \texttt{clase010} y
+\texttt{clase011} entrenan modelos a partir de tablas de verdad y archivos CSV,
+respectivamente; los sketches de los programas 3 a 6 ejecutan modelos lógicos o
+modelos aprendidos en una placa.
 
 \subsection{Programa 1: \texttt{clase010}}
 
@@ -172,7 +174,7 @@ de entrenamiento. Una neurona lineal con sigmoide puede representar AND, OR,
 NAND y NOR; XOR no es linealmente separable, por lo que el clasificador de una
 neurona no puede ajustarse perfectamente a esa tabla.
 
-\subsubsection{Liga de \textbf{Github}}
+\subsubsection{Liga de \textbf{GitHub}}
 
 \href{https://github.com/MarcosHCK/master-programming/tree/master/clase010}{Aquí \faGithubSquare}
 
@@ -288,7 +290,174 @@ En el ejemplo, la salida identifica \texttt{adulto} como clase cero y
 \texttt{joven} como clase uno; la exactitud final se calcula sobre las mismas
 filas utilizadas para entrenar, no sobre un conjunto de prueba separado.
 
-\subsubsection{Liga de \textbf{Github}}
+\subsubsection{Liga de \textbf{GitHub}}
+
+\href{https://github.com/MarcosHCK/master-programming/tree/master/clase011}{Aquí \faGithubSquare}
+
+\subsection{Programa 3: \texttt{logicgates.ino}}
+
+\subsubsection{Objetivos}
+
+Implementar un perceptrón de dos entradas en Arduino UNO para reconocer la
+función lógica AND. El resultado se muestra en un LED y en el Monitor Serie.
+
+\subsubsection{Tecnicismos}
+
+Arquitectura basada en \ref{sec:genarc:arduino}. Las entradas binarias son
+\(X_1\) y \(X_2\), con el sesgo representado por \(X_0=1\). El perceptrón
+calcula \(Z=W_0X_0+W_1X_1+W_2X_2\) y produce uno cuando \(Z\geq 0\). Los
+pulsadores están conectados a D8 y D7 con \texttt{INPUT\_PULLUP}, por lo que
+al pulsarlos la lectura se invierte a uno. La salida controla el LED en D4.
+
+\subsubsection{Código relevante}
+
+El sketch completo configura los pines, lee los pulsadores y actualiza la salida
+del perceptrón:
+
+\inputminted{cpp}{../clase011/logicgates.ino}
+
+\subsubsection{Ejecución}
+
+Cargar el sketch a un Arduino UNO R3. Conectar un pulsador entre D8 y GND y otro
+entre D7 y GND; conectar el LED a D4 con su resistencia limitadora. Abrir el
+Monitor Serie a \(9600\) baudios para ver los pesos y los cambios de entrada y
+salida.
+
+\subsubsection{Resultados esperados}
+
+El LED se enciende únicamente cuando ambos pulsadores están presionados. La
+tabla resume la tabla de verdad:
+
+\begin{center}
+\begin{tabular}{cc|c}
+  \(X_1\) & \(X_2\) & \(Y\) \\
+  \hline
+  0 & 0 & 0 \\
+  0 & 1 & 0 \\
+  1 & 0 & 0 \\
+  1 & 1 & 1 \\
+\end{tabular}
+\end{center}
+
+\subsubsection{Liga de \textbf{GitHub}}
+
+\href{https://github.com/MarcosHCK/master-programming/tree/master/clase011}{Aquí \faGithubSquare}
+
+\subsection{Programa 4: \texttt{diabetes.ino}}
+
+\subsubsection{Objetivos}
+
+Aplicar en Arduino UNO el perceptrón entrenado con \texttt{diabetes.csv} para
+clasificar registros según el índice de masa corporal (IMC) y la glucosa.
+
+\subsubsection{Tecnicismos}
+
+El modelo tiene dos entradas y usa el sesgo y los pesos reportados por
+\texttt{clase011}. Cada entrada se normaliza con la media \(\mu_i\) y la escala
+\(s_i\) del CSV; luego se calcula \(Z=W_0+\sum_i W_i((x_i-\mu_i)/s_i)\). La
+salida es uno si \(Z\geq0\). El programa valida que ambos valores sean números
+positivos.
+
+\subsubsection{Código relevante}
+
+El sketch completo contiene los parámetros aprendidos, el análisis de la línea
+serie y la inferencia:
+
+\inputminted{cpp}{../clase011/diabetes.ino}
+
+\subsubsection{Ejecución}
+
+Cargar el sketch a Arduino UNO y abrir el Monitor Serie a \(9600\) baudios.
+Enviar una línea con el formato \texttt{IMC,Glucosa}, por ejemplo
+\texttt{22.49,95.12}. El programa imprime la suma ponderada y la clase, y queda
+listo para recibir otro registro.
+
+\subsubsection{Resultados esperados}
+
+Para el ejemplo \texttt{22.49,95.12}, el modelo produce la clase cero (sin
+diabetes en las etiquetas del conjunto de datos). La etiqueta es una salida del
+modelo académico y no una evaluación clínica.
+
+\subsubsection{Liga de \textbf{GitHub}}
+
+\href{https://github.com/MarcosHCK/master-programming/tree/master/clase011}{Aquí \faGithubSquare}
+
+\subsection{Programa 5: \texttt{anemia.ino}}
+
+\subsubsection{Objetivos}
+
+Ejecutar en Arduino UNO el perceptrón de cuatro entradas entrenado con
+\texttt{anemia.csv}. El sketch ilustra cómo llevar a una placa un clasificador
+entrenado fuera de ella; su salida tiene propósito académico y no diagnostica
+anemia.
+
+\subsubsection{Tecnicismos}
+
+Las entradas son edad, energía, frecuencia y antecedentes. El firmware contiene
+el sesgo, los cuatro pesos y las medias y escalas del conjunto de entrenamiento.
+Normaliza cada característica y calcula una suma ponderada; la clase es uno
+cuando la suma es no negativa. Antecedentes debe ser cero o uno, la edad y la
+frecuencia deben ser positivas y la energía no puede ser negativa.
+
+\subsubsection{Código relevante}
+
+El listado incluye los pesos aprendidos, las constantes de normalización, la
+validación de la línea CSV y la clasificación:
+
+\inputminted{cpp}{../clase011/anemia.ino}
+
+\subsubsection{Ejecución}
+
+Cargar el sketch a Arduino UNO y abrir el Monitor Serie a \(9600\) baudios.
+Introducir cuatro valores separados por comas, en este orden: edad, energía,
+frecuencia y antecedentes. Por ejemplo: \texttt{25,8,72,0}. El sketch imprime
+\(Z\) y la clase predicha.
+
+\subsubsection{Resultados esperados}
+
+El registro de ejemplo pertenece a la clase cero (sin anemia en los datos). Una
+entrada con antecedentes debe terminar en cero o uno; el resultado es una
+clasificación del modelo, no un diagnóstico.
+
+\subsubsection{Liga de \textbf{GitHub}}
+
+\href{https://github.com/MarcosHCK/master-programming/tree/master/clase011}{Aquí \faGithubSquare}
+
+\subsection{Programa 6: \texttt{obesidad.ino}}
+
+\subsubsection{Objetivos}
+
+Aplicar en Arduino UNO el perceptrón de seis entradas entrenado con
+\texttt{obesidad.csv}, usando datos introducidos por el Monitor Serie.
+
+\subsubsection{Tecnicismos}
+
+El modelo usa edad, sexo, IMC, actividad, calorías y antecedentes. El sketch
+incluye el sesgo, los pesos y las medias y escalas aprendidos; normaliza las seis
+entradas antes de calcular \(Z\), y asigna la clase uno cuando \(Z\geq0\). Sexo
+y antecedentes deben ser binarios; actividad debe ser no negativa y edad, IMC y
+calorías deben ser positivos.
+
+\subsubsection{Código relevante}
+
+El sketch completo implementa la validación de los seis campos, la normalización
+y la inferencia:
+
+\inputminted{cpp}{../clase011/obesidad.ino}
+
+\subsubsection{Ejecución}
+
+Cargar el sketch a Arduino UNO y abrir el Monitor Serie a \(9600\) baudios.
+Enviar los valores en el orden
+edad, sexo, IMC, actividad, calorías y antecedentes; por ejemplo,
+\texttt{25,0,22.5,5,2200,0}. El programa imprime la suma ponderada y la clase.
+
+\subsubsection{Resultados esperados}
+
+Para el registro de ejemplo, el modelo predice la clase cero (sin obesidad en las
+etiquetas del CSV).
+
+\subsubsection{Liga de \textbf{GitHub}}
 
 \href{https://github.com/MarcosHCK/master-programming/tree/master/clase011}{Aquí \faGithubSquare}
 

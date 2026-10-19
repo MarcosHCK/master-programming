@@ -1,7 +1,7 @@
 /*
-  PERCEPTRON ANEMIA - ARDUINO UNO / WOKWI
-  Entrada serie: Edad,Energia,Frecuencia,Antecedentes
-  0 = sin anemia; 1 = con anemia (clasificacion academica)
+  PERCEPTRÓN ANEMIA - ARDUINO UNO / WOKWI
+  Entrada serie: edad, energía, frecuencia y antecedentes
+  0 = sin anemia; 1 = con anemia (clasificación académica)
 */
 
 // PESOS REPORTADOS POR clase011/anemia.csv (bias primero):
@@ -26,8 +26,8 @@ void setup ()
 
   Serial.begin (9600);
   Serial.setTimeout (1000);
-  Serial.println ("PERCEPTRON ANEMIA - 4 ENTRADAS");
-  Serial.println ("Introduzca: Edad,Energia,Frecuencia,Antecedentes");
+  Serial.println ("PERCEPTRÓN ANEMIA - 4 ENTRADAS");
+  Serial.println ("Introduzca cuatro valores: edad, energía, frecuencia y antecedentes.");
   Serial.println ("Pesos entrenados en clase011/anemia.csv:");
   Serial.print ("W0 = "); Serial.println (W0, 6);
   Serial.print ("W1 = "); Serial.println (W1, 6);
@@ -50,7 +50,7 @@ void loop ()
 
   if (coma1 < 0 || coma2 < 0 || coma3 < 0 || linea.indexOf (',', coma3 + 1) >= 0)
     {
-      Serial.println ("ERROR. Formato: Edad,Energia,Frecuencia,Antecedentes");
+      Serial.println ("ERROR. Introduzca cuatro valores separados por comas.");
       return;
     }
 
@@ -67,7 +67,7 @@ void loop ()
   if (! campo1.length () || ! campo2.length () || ! campo3.length () ||
       (campo4 != "0" && campo4 != "1"))
     {
-      Serial.println ("ERROR. Datos incompletos o antecedentes invalidos");
+      Serial.println ("ERROR. Datos incompletos o antecedentes inválidos.");
       return;
     }
 
@@ -92,6 +92,5 @@ void loop ()
   Serial.print ("Z = "); Serial.println (Z, 6);
   Serial.print ("Y = "); Serial.println (Y);
   Serial.println (Y ? "Clase: CON ANEMIA (1)" : "Clase: SIN ANEMIA (0)");
-  Serial.println ("Uso academico; no es diagnostico medico.");
   Serial.println ("Ingrese otro registro:");
 }

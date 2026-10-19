@@ -1,7 +1,7 @@
 /*
-  PERCEPTRON OBESIDAD - ARDUINO UNO / WOKWI
-  Entrada serie: Edad,Sexo,IMC,Actividad,Calorias,Antecedentes
-  0 = sin obesidad; 1 = con obesidad (clasificacion academica)
+  PERCEPTRÓN OBESIDAD - ARDUINO UNO / WOKWI
+  Entrada serie: edad, sexo, IMC, actividad, calorías y antecedentes
+  0 = sin obesidad; 1 = con obesidad (clasificación académica)
 */
 
 // PESOS REPORTADOS POR clase011/obesidad.csv (bias primero):
@@ -64,8 +64,8 @@ void setup ()
 
   Serial.begin (9600);
   Serial.setTimeout (1000);
-  Serial.println ("PERCEPTRON OBESIDAD - 6 ENTRADAS");
-  Serial.println ("Introduzca: Edad,Sexo,IMC,Actividad,Calorias,Antecedentes");
+  Serial.println ("PERCEPTRÓN OBESIDAD - 6 ENTRADAS");
+  Serial.println ("Introduzca edad, sexo, IMC, actividad, calorías y antecedentes separados por comas.");
   Serial.println ("Ejemplo: 34,1,27.8,2,2800,1");
   Serial.println ("Pesos entrenados en clase011/obesidad.csv:");
   Serial.print ("W0 = "); Serial.println (W0, 6);
@@ -122,7 +122,7 @@ void loop ()
 
   if (! correcto)
     {
-      Serial.println ("ERROR. Use: Edad,Sexo,IMC,Actividad,Calorias,Antecedentes");
+      Serial.println ("ERROR. Introduzca seis valores numéricos separados por comas.");
       return;
     }
 
@@ -152,8 +152,7 @@ void loop ()
   Serial.println ("------------------------------");
   Serial.print ("Suma ponderada Z = "); Serial.println (Z, 6);
   Serial.print ("Salida Y = "); Serial.println (Y);
-  if (Y == 1) Serial.println ("CLASIFICACION: CON OBESIDAD (1)");
-  else Serial.println ("CLASIFICACION: SIN OBESIDAD (0)");
-  Serial.println ("Solo ejercicio academico; NO es diagnostico medico.");
+  if (Y == 1) Serial.println ("CLASIFICACIÓN: CON OBESIDAD (1)");
+  else Serial.println ("CLASIFICACIÓN: SIN OBESIDAD (0)");
   Serial.println ("Ingrese otro registro:");
 }

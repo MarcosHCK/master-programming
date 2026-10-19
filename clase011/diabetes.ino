@@ -1,7 +1,7 @@
 /*
-  PERCEPTRON DIABETES - ARDUINO UNO / WOKWI
-  Entrada serie: IMC,Glucosa
-  0 = sin diabetes; 1 = con diabetes (clasificacion academica)
+  PERCEPTRÓN DIABETES - ARDUINO UNO / WOKWI
+  Entrada serie: índice de masa corporal y glucosa
+  0 = sin diabetes; 1 = con diabetes (clasificación académica)
 */
 
 // PESOS REPORTADOS POR clase011/diabetes.csv (bias primero):
@@ -52,8 +52,8 @@ void setup ()
 
   Serial.begin (9600);
   Serial.setTimeout (1000);
-  Serial.println ("PERCEPTRON DIABETES - 2 ENTRADAS");
-  Serial.println ("Introduzca: IMC,Glucosa (ejemplo: 30.5,155)");
+  Serial.println ("PERCEPTRÓN DIABETES - 2 ENTRADAS");
+  Serial.println ("Introduzca el IMC y la glucosa separados por comas (ejemplo: 30.5,155).");
   Serial.println ("Pesos entrenados en clase011/diabetes.csv:");
   Serial.print ("W0 = "); Serial.println (W0, 6);
   Serial.print ("W1 = "); Serial.println (W1, 6);
@@ -83,7 +83,7 @@ void loop ()
 
   if (! numeroValido (campoIMC) || ! numeroValido (campoGlucosa))
     {
-      Serial.println ("ERROR. Use numeros positivos");
+      Serial.println ("ERROR. Utilice números positivos");
       return;
     }
 
@@ -104,6 +104,5 @@ void loop ()
   Serial.print ("Z = "); Serial.println (Z, 6);
   Serial.print ("Y = "); Serial.println (Y);
   Serial.println (Y ? "Clase: CON DIABETES (1)" : "Clase: SIN DIABETES (0)");
-  Serial.println ("Uso academico; no es diagnostico medico.");
   Serial.println ("Ingrese otro registro: IMC,Glucosa");
 }

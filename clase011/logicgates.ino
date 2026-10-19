@@ -1,10 +1,10 @@
 /*
-  PERCEPTRON CON TRES PESOS - ARDUINO UNO R3
+  PERCEPTRÓN CON TRES PESOS - ARDUINO UNO R3
   X0 = 1; X1 = pulsador D8; X2 = pulsador D7
   Y = LED D4. Pulsadores conectados a GND.
 */
 
-// CAMBIAR UNICAMENTE ESTOS TRES PESOS:
+// CAMBIAR ÚNICAMENTE ESTOS TRES PESOS:
 float W0 = -9.0172;
 float W1 = 5.9521;
 float W2 = 5.9514;
@@ -28,7 +28,7 @@ void setup ()
   pinMode (PIN_LED, OUTPUT);
   digitalWrite (PIN_LED, LOW);
 
-  Serial.println ("PERCEPTRON - ARDUINO UNO");
+  Serial.println ("PERCEPTRÓN - ARDUINO UNO");
   Serial.print ("W0 = "); Serial.println (W0, 4);
   Serial.print ("W1 = "); Serial.println (W1, 4);
   Serial.print ("W2 = "); Serial.println (W2, 4);
