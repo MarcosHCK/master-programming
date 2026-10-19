@@ -72,9 +72,11 @@ add_project_arguments (cpp.get_supported_arguments (warning_c_args), language: '
 add_project_link_arguments (cpp.get_supported_link_arguments (warning_c_link_args), language: 'cpp')
 
 argparse_dep = dependency ('argparse', required: true)
+python = import ('python').find_installation ('python3')
 
 subdir ('clase567')
 subdir ('clase89ac')
+subdir ('clase011')
 
 summary ({
     'C compiler': cc.get_id (),

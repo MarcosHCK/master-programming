@@ -1,0 +1,10 @@
+# Copyright 2026 MarcosHCK
+#
+
+option ('arduino_avr_core', type: 'string',
+  value: '/usr/share/arduino/hardware/arduino/avr/cores/arduino',
+  description: 'Path to the Arduino AVR core source directory')
+
+option ('arduino_avr_variant', type: 'string',
+  value: '/usr/share/arduino/hardware/arduino/avr/variants/standard',
+  description: 'Path to the Arduino AVR standard variant directory')
