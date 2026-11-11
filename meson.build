@@ -77,6 +77,7 @@ python = import ('python').find_installation ('python3')
 subdir ('clase567')
 subdir ('clase89ac')
 subdir ('clase011')
+subdir ('clase01a')
 
 summary ({
     'C compiler': cc.get_id (),
