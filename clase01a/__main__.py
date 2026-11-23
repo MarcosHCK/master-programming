@@ -26,24 +26,19 @@ selection_types = {
   'roulette': 'select parents with probability proportional to fitness',
 }
 
-def generate_individual (rng: Random) -> float:
+def generate_individual (rng: Random) -> tuple[float, float]:
   """Generate a real-valued candidate across the configured search interval."""
 
-  return rng.uniform (INITIAL_MIN, INITIAL_MAX)
+  return (rng.uniform (INITIAL_MIN, INITIAL_MAX), rng.uniform (INITIAL_MIN, INITIAL_MAX))
 
 
-def fitness_function (t: float) -> float:
+def fitness_function (t: tuple[float, float]) -> float:
   """Evaluate the example multimodal sum-of-Gaussians fitness function."""
 
-  N = float (n := GAUSSIANS_NUMBER)
+  x, y = t
+  return -x**2 - y**2
 
-  A = lambda k: 1.0 / k
-  m = lambda k: -100.0 + 200.0 * k / (N + 1.0)
-  s = lambda _: 100.0 / N
-
-  return sum (A (k) * exp (- pow (t - m (k), 2) / (2.0 * pow (s (k), 2))) for k in range (1, n))
-
-def sbx_crossover (first_parent: float, second_parent: float, rng: Random) -> tuple[float, float]:
+def sbx_crossover_one (first_parent: float, second_parent: float, rng: Random) -> tuple[float, float]:
   """Apply unbounded simulated binary crossover to two scalar parents.
 
   The distribution index controls how close children tend to be to their
@@ -69,8 +64,18 @@ def sbx_crossover (first_parent: float, second_parent: float, rng: Random) -> tu
 
   return midpoint + half_difference, midpoint - half_difference
 
+def sbx_crossover (first_parent: tuple[float, float], second_parent: tuple[float, float], rng: Random) -> tuple[tuple[float,float], tuple[float,float]]:
 
-def mutate (individual: float, rng: Random) -> float:
+  x1, y1 = first_parent
+  x2, y2 = second_parent
+
+  a1, a2 = sbx_crossover_one (x1, x2, rng)
+  b1, b2 = sbx_crossover_one (y1, y2, rng)
+
+  return (a1, b1), (a2, b2)
+
+
+def mutate_one (individual: float, rng: Random) -> float:
   """Occasionally perturb t with Gaussian noise to maintain population diversity."""
 
   if rng.random () < MUTATION_RATE:
@@ -78,6 +83,10 @@ def mutate (individual: float, rng: Random) -> float:
 
   return individual
 
+def mutate (individual: tuple[float,float], rng: Random) -> tuple[float,float]:
+
+  x, y = individual
+  return mutate_one (x, rng), mutate_one (y, rng)
 
 def add_optimizer_arguments (parser: ArgumentParser, generations: int) -> None:
 
@@ -214,6 +223,6 @@ if __name__ == '__main__':
   except (TypeError, ValueError) as error:
     parser.error (str (error))
 
-  print (f'Best t: {result.best_individual:.10g}')
+  print (f'Best t: ({result.best_individual[0]:.10g}, {result.best_individual[1]:.10g})')
   print (f'Best y(t): {result.best_fitness:.10g}')
   print (f'Generations completed: {result.generations_completed}')

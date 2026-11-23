@@ -1,0 +1,245 @@
+% Copyright 2026 MarcosHCK
+%
+\documentclass[12pt,a4paper]{article}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{bookmark}
+\usepackage{fontawesome5}
+\usepackage{hyperref}
+\usepackage{indentfirst}
+\usepackage{inputenc}[utf8]
+\usepackage{minted}
+\usepackage{polyglossia}
+\usepackage{setspace}
+\usepackage{xcolor}[dvipsnames]
+
+\setmainlanguage{spanish}
+\setotherlanguage{english}
+\setstretch{1.4}
+
+\definecolor{DarkAquamarine}{rgb}{0.18, 0.55, 0.34}
+\hypersetup {
+  colorlinks = true,
+  linkcolor  = violet,
+  urlcolor   = DarkAquamarine,
+}
+
+\begin{document}
+
+\begin{titlepage}
+  \centering
+  {\huge\bfseries Reporte (semana 7+)\par}
+  \vspace{1em}
+  {\Large Autor: \itshape Marcos Antonio Pérez Lorenzo\par}
+\end{titlepage}
+
+\pagebreak
+\input{../reports/arquitectures.tex}
+\input{../reports/instructions.tex}
+
+\section{Programas}
+
+Los programas y pruebas descritos en este reporte pertenecen al subproyecto
+\texttt{clase01a}, escrito en Python. El código está disponible en el
+\href{https://github.com/MarcosHCK/master-programming/tree/master/clase01a}
+{repositorio \faGithubSquare}. El optimizador es genérico respecto al tipo de
+individuo, pero su función de aptitud debe devolver un único valor real; las
+estrategias de selección y la preservación de élites se configuran por separado.
+
+Las cinco entradas siguientes documentan las estrategias y extensiones
+solicitadas. Se distingue explícitamente lo que existe en el código revisado de
+lo que se plantea como extensión: de ese modo, la explicación de optimización
+multiobjetivo no se confunde con una capacidad ya implementada.
+
+\subsection{Programa 1: Optimizador genético con cuatro esquemas de apareamiento}
+
+\subsubsection{Objetivos}
+
+El programa ejecutable \texttt{clase01a} busca maximizar la aptitud de una
+población de individuos reales. El argumento \mintinline{bash}{--selection-type}
+permite escoger cuatro esquemas básicos de apareamiento:
+
+\begin{enumerate}
+  \item \textbf{Mejor con todos} (\texttt{best-with-all}): el individuo mejor
+    clasificado se aparea con cada uno de los demás. Si la población ordenada es
+    \(r_1,r_2,\ldots,r_n\), los pares son
+    \((r_1,r_2),(r_1,r_3),\ldots,(r_1,r_n)\). Este esquema genera más hijos que
+    los otros; la población siguiente se limita a su tamaño configurado
+    conservando los candidatos de mayor aptitud.
+  \item \textbf{Aleatorio} (\texttt{random}): mezcla la población y aparea a los
+    vecinos de la lista mezclada. Si el tamaño es impar, el último individuo no
+    apareado pasa a la siguiente generación.
+  \item \textbf{Mejor con mejor} (\texttt{elitist} en el código): ordena por
+    aptitud descendente y aparea posiciones adyacentes: mejor con segundo mejor,
+    tercero con cuarto, etc. El nombre \texttt{elitist} designa aquí el
+    apareamiento por rango; no significa que los padres se copien sin cambios.
+  \item \textbf{Mejor con peor} (\texttt{best-with-worse}): aparea extremos
+    opuestos del orden: mejor con peor, segundo mejor con segundo peor, y así
+    sucesivamente. Si hay un individuo central sin pareja, se conserva sin
+    cruzamiento.
+\end{enumerate}
+
+\subsubsection{Tecnicismos}
+
+El optimizador maximiza puntuaciones: una puntuación mayor siempre se considera
+mejor. Para cada pareja se aplica cruzamiento binario simulado (SBX) y después
+mutación gaussiana, con una probabilidad de \(0.15\) por coordenada y desviación
+típica \(2.0\). El generador inicializa cada coordenada en el intervalo
+\([-100,100]\); el SBX no impone límites a los hijos.
+
+En el estado del código revisado, el individuo de ejemplo tiene dos
+coordenadas \((x,y)\), pero su aptitud sigue siendo escalar:
+
+\[
+  f(x,y)=-x^2-y^2.
+\]
+
+Esta función tiene un único máximo global en \((0,0)\).
+
+\subsubsection{Ejecución}
+
+Desde la raíz del repositorio, por ejemplo:
+
+\begin{minted}{bash}
+python -m clase01a --selection-type best-with-all
+python -m clase01a --selection-type random
+python -m clase01a --selection-type elitist
+python -m clase01a --selection-type best-with-worse
+\end{minted}
+
+La semilla permite repetir las decisiones aleatorias de una corrida. El
+programa imprime el mejor individuo encontrado, su aptitud y las generaciones
+completadas.
+
+\subsection{Programa 2: Optimizador genético multiobjetivo y superficie de Pareto}
+
+\subsubsection{Objetivos y fundamento}
+
+Este apartado describe la extensión multiobjetivo solicitada y la diferencia
+conceptual respecto al optimizador escalar. En un problema con varios objetivos
+se evalúa cada individuo mediante un vector, por ejemplo
+\(\mathbf{F}(x)=(f_1(x),f_2(x))\), en vez de una sola aptitud. Si ambos objetivos
+se maximizan, un individuo \(a\) domina a \(b\) cuando no es peor en ninguno y
+es estrictamente mejor en al menos uno:
+
+\[
+  f_i(a)\geq f_i(b)\quad\text{para todo }i,
+  \qquad f_j(a)>f_j(b)\quad\text{para algún }j.
+\]
+
+Cuando los objetivos entran en conflicto, puede no existir un individuo que
+maximice todos simultáneamente. La frontera de Pareto reúne las soluciones no
+dominadas: mejorar un objetivo desde uno de esos puntos requiere empeorar al
+menos otro. Por eso, una corrida ordinaria que compara individuos mediante una
+sola puntuación selecciona un ganador, no la frontera completa. Si se reduce el
+vector a una suma ponderada,
+
+\[
+  g_{w}(x)=w f_1(x)+(1-w)f_2(x),\qquad 0\leq w\leq1,
+\]
+
+el algoritmo maximiza \(g_w\) y devuelve una solución favorecida por ese peso.
+Cambiar \(w\), la población inicial o la semilla puede conducir a otro punto
+eficiente. Si varios candidatos empatan en el valor escalar, el algoritmo
+conserva uno de los mejores candidatos encontrados; no devuelve por ello todos
+los empates ni toda la superficie de Pareto.
+
+\subsection{Programa 3: Algoritmo genético con elitismo añadido}
+
+\subsubsection{Objetivos}
+
+El parámetro \mintinline{bash}{--elite-size} conserva sin modificar los mejores
+\(k\) individuos de cada generación y los copia a la siguiente. El valor
+predeterminado es cero, por lo que la preservación explícita está desactivada
+por omisión.
+
+\subsubsection{Diferencia respecto al apareamiento elitista}
+
+El elitismo añadido es independiente de la estrategia \texttt{elitist} del
+programa 1. Esa estrategia únicamente aparea individuos consecutivos del
+ranking; sus hijos pueden reemplazar a los padres. En cambio,
+\texttt{elite\_size} reserva puestos para individuos de la población actual
+copiados literalmente, independientemente del método de apareamiento elegido.
+Por ejemplo, se puede combinar \texttt{best-with-worse} con dos élites:
+
+\begin{minted}{bash}
+python -m clase01a --selection-type best-with-worse --elite-size 2
+\end{minted}
+
+El algoritmo también lleva un registro del mejor individuo encontrado a lo
+largo de toda la corrida. Ese registro histórico no es lo mismo que preservar
+ese individuo en cada población; la garantía de conservación generacional la
+proporciona \texttt{elite\_size}.
+
+\subsection{Programa 4: Selección por ruleta y por torneo}
+
+\subsubsection{Selección por ruleta}
+
+La opción \texttt{roulette} elige cada padre mediante muestreo con probabilidad
+proporcional a un peso derivado de su aptitud. Si las puntuaciones son
+negativas, primero se desplazan para obtener pesos no negativos; si todas son
+iguales, se usan pesos uniformes. El muestreo es con reemplazo, por lo que un
+mismo individuo puede ser seleccionado más de una vez en una generación. El
+método ofrece una preferencia probabilística por candidatos mejores, sin
+restringir la selección exclusivamente al primero del ranking.
+
+\subsubsection{Selección por torneo}
+
+La opción \texttt{tournament} toma tres candidatos al azar para cada elección
+de padre y escoge el de mayor aptitud. Los dos padres de una pareja se
+seleccionan por separado, por lo que un individuo puede volver a participar.
+Para poblaciones menores que tres, el torneo usa todos los candidatos
+disponibles. Aumentar el tamaño del torneo normalmente refuerza la presión de
+selección; en esta implementación el tamaño está fijado en tres.
+
+\subsubsection{Ejecución}
+
+Ambas opciones usan los mismos argumentos de población, generaciones, semilla
+y tamaño de élite que las demás estrategias:
+
+\begin{minted}{bash}
+python -m clase01a --selection-type roulette --elite-size 0
+python -m clase01a --selection-type tournament --elite-size 2
+\end{minted}
+
+Las seis opciones disponibles en el CLI son \texttt{elitist}, \texttt{random},
+\texttt{best-with-all}, \texttt{best-with-worse}, \texttt{tournament} y
+\texttt{roulette}.
+
+\subsection{Programa 5: Animación de las estrategias de optimización}
+
+\subsubsection{Objetivos y funcionamiento}
+
+El subcomando \texttt{animate} registra poblaciones durante la optimización y
+genera una gráfica por generación capturada. Incluye la generación inicial,
+cada \(N\)-ésima generación (\texttt{--generation-divider}) y siempre la
+generación final. Las gráficas se ensamblan como GIF con Pillow o como WebM con
+\texttt{ffmpeg}; los cuadros PNG pueden guardarse en un directorio o eliminarse
+al terminar. La representación muestra la curva de aptitud, los individuos de
+la población y el mejor de la generación.
+
+El script \path{clase01a/animate.sh} recorre las seis estrategias dos veces:
+primero con \texttt{--elite-size 0} y después con \texttt{--elite-size 2}.
+Configura 200 generaciones, un cuadro cada cinco generaciones, 100 ms por
+cuadro y límites horizontales \([-120,120]\). Así se preparan doce salidas en
+\path{clase01a/animations/}:
+
+\begin{itemize}
+  \item \texttt{elitist.webm}, \texttt{elitist-elite.webm};
+  \item \texttt{random.webm}, \texttt{random-elite.webm};
+  \item \texttt{best-with-all.webm}, \texttt{best-with-all-elite.webm};
+  \item \texttt{best-with-worse.webm}, \texttt{best-with-worse-elite.webm};
+  \item \texttt{tournament.webm}, \texttt{tournament-elite.webm};
+  \item \texttt{roulette.webm}, \texttt{roulette-elite.webm}.
+\end{itemize}
+
+Se puede generar una animación individual directamente, por ejemplo:
+
+\begin{minted}{bash}
+python -m clase01a animate --selection-type roulette --elite-size 2 \
+  --generations 200 --generation-divider 5 --frame-duration 100 \
+  --output clase01a/animations/roulette-elite.webm --x-limits -120 120
+\end{minted}
+
+\end{document}
